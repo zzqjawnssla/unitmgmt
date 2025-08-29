@@ -105,7 +105,16 @@ android {
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
         }
     }
-}
+      buildFeatures {
+      // 다른 항목(buildConfig 등)과 함께 추가
+      prefab true
+      }
+
+      // (옵션) NDK 27에서 c++_shared 충돌 예방
+      packagingOptions {
+      pickFirst "**/libc++_shared.so"
+      }
+    }
 
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
