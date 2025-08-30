@@ -73,3 +73,54 @@ yarn-error.log
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+# Environment variables and sensitive configuration
+.env
+.env.*
+!.env.example
+
+# Development tools and debugging
+ReactotronConfig.js
+Flipper/
+
+# Claude Code configuration and memory
+CLAUDE.md
+MEMORY.md
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs and crash reports
+*.log
+crash-logs/
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+.tmp/
+
+# Security and secrets
+secrets/
+credentials/
+keys/
+certs/
+*.pem
+*.p12
+*.mobileprovision
+google-services.json
+GoogleService-Info.plist
+
+# Android specific sensitive files  
+app/release/
+app/debug/output.json
+app/src/*/res/values/secrets.xml
+signing.properties
+
+# iOS specific sensitive files
+ios/GoogleService-Info.plist
+ios/*/GoogleService-Info.plist
