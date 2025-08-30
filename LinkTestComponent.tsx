@@ -7,17 +7,26 @@ import React, {
   startTransition,
 } from 'react';
 import {
-  Alert,
-  ActivityIndicator,
-  Button,
   InteractionManager,
   Platform,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
+import {
+  Appbar,
+  Card,
+  Button,
+  Text,
+  Surface,
+  Badge,
+  ActivityIndicator,
+  Dialog,
+  Portal,
+  Divider,
+  useTheme,
+} from 'react-native-paper';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 // 동적 로드(링크 상태에 상관없이 앱이 죽지 않도록)
 let JailMonkey: any;
@@ -47,30 +56,48 @@ interface TestResult {
 const LinkTestComponent: React.FC = () => {
   const [testResults, setTestResults] = useState<TestResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [showDialog, setShowDialog] = useState(false);
+  const theme = useTheme();
+
+  const getStatusIcon = (status: TestStatus) => {
+    switch (status) {
+      case 'success':
+        return 'check-circle';
+      case 'error':
+        return 'alert-circle';
+      case 'not_available':
+        return 'help-circle';
+      default:
+        return 'circle';
+    }
+  };
 
   const getStatusColor = (status: TestStatus) => {
     switch (status) {
       case 'success':
-        return '#28a745';
+        return theme.colors.primary;
       case 'error':
-        return '#dc3545';
+        return theme.colors.error;
       case 'not_available':
-        return '#ffc107';
+        return theme.colors.outline;
       default:
-        return '#6c757d';
+        return theme.colors.onSurfaceVariant;
     }
   };
 
-  const showSummaryAlert = useCallback(() => {
+  const showSummaryDialog = useCallback(() => {
+    setShowDialog(true);
+  }, []);
+
+  const hideSummaryDialog = useCallback(() => {
+    setShowDialog(false);
+  }, []);
+
+  const getSummaryStats = useMemo(() => {
     const successCount = testResults.filter(r => r.status === 'success').length;
     const errorCount = testResults.filter(r => r.status === 'error').length;
     const naCount = testResults.filter(r => r.status === 'not_available').length;
-
-    Alert.alert(
-      'Test Summary',
-      `✅ Success: ${successCount}\n❌ Error: ${errorCount}\n⚠️ Not Available: ${naCount}\n\nTotal: ${testResults.length}`,
-      [{ text: 'OK' }],
-    );
+    return { successCount, errorCount, naCount };
   }, [testResults]);
 
   const headerNote = useMemo(
@@ -214,92 +241,241 @@ const LinkTestComponent: React.FC = () => {
   }, [runAllTests]);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Library Link Test</Text>
-        <Text style={styles.subtitle}>Platform: {Platform.OS}</Text>
-        <Text style={styles.note}>{headerNote}</Text>
+    <Surface style={styles.container}>
+      <Appbar.Header>
+        <Appbar.Content title="Library Link Test" />
+        <Appbar.Action 
+          icon="information" 
+          onPress={showSummaryDialog}
+          disabled={testResults.length === 0}
+        />
+      </Appbar.Header>
 
-        <View style={styles.buttonRow}>
-          <Button title="Run Tests" onPress={runAllTests} disabled={isLoading} />
-          <Button
-            title="Show Summary"
-            onPress={showSummaryAlert}
-            disabled={testResults.length === 0}
-          />
+      <Surface style={styles.header} elevation={1}>
+        <View style={styles.headerContent}>
+          <View style={styles.platformInfo}>
+            <Icon 
+              name={Platform.OS === 'ios' ? 'apple' : 'android'} 
+              size={24} 
+              color={theme.colors.primary} 
+            />
+            <Text variant="titleMedium" style={styles.platformText}>
+              Platform: {Platform.OS}
+            </Text>
+          </View>
+          <Text variant="bodyMedium" style={styles.note}>
+            {headerNote}
+          </Text>
+          <View style={styles.statsRow}>
+            <Badge style={[styles.statsBadge, { backgroundColor: theme.colors.primaryContainer }]}>
+              {`${getSummaryStats.successCount} Success`}
+            </Badge>
+            <Badge style={[styles.statsBadge, { backgroundColor: theme.colors.errorContainer }]}>
+              {`${getSummaryStats.errorCount} Error`}
+            </Badge>
+            <Badge style={[styles.statsBadge, { backgroundColor: theme.colors.surfaceVariant }]}>
+              {`${getSummaryStats.naCount} N/A`}
+            </Badge>
+          </View>
         </View>
-      </View>
+        <Button 
+          mode="contained" 
+          onPress={runAllTests} 
+          loading={isLoading}
+          disabled={isLoading}
+          icon="play"
+          style={styles.runButton}
+        >
+          {isLoading ? 'Running Tests...' : 'Run Tests'}
+        </Button>
+      </Surface>
 
       {isLoading ? (
-        <View style={styles.loadingBox}>
-          <ActivityIndicator />
-          <Text style={styles.loadingText}>Running…</Text>
-        </View>
+        <Surface style={styles.loadingBox} elevation={2}>
+          <ActivityIndicator size="large" />
+          <Text variant="bodyLarge" style={styles.loadingText}>
+            Running Tests...
+          </Text>
+        </Surface>
       ) : (
-        <ScrollView style={styles.scroll}>
+        <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
           {testResults.map((r, idx) => (
-            <View key={`${r.name}-${idx}`} style={styles.item}>
-              <Text style={[styles.name, { color: getStatusColor(r.status) }]}>
-                {r.status.toUpperCase()} · {r.name}
-              </Text>
-              {'result' in r && r.result !== undefined ? (
-                <Text style={styles.result}>
-                  {typeof r.result === 'object'
-                    ? JSON.stringify(r.result)
-                    : String(r.result)}
-                </Text>
-              ) : null}
-              {r.error ? <Text style={styles.error}>{r.error}</Text> : null}
-            </View>
+            <Card key={`${r.name}-${idx}`} style={styles.testCard} mode="elevated">
+              <Card.Content>
+                <View style={styles.testHeader}>
+                  <View style={styles.testTitleRow}>
+                    <Icon 
+                      name={getStatusIcon(r.status)} 
+                      size={20} 
+                      color={getStatusColor(r.status)} 
+                    />
+                    <Text variant="titleSmall" style={styles.testName}>
+                      {r.name}
+                    </Text>
+                  </View>
+                  <Badge style={[styles.statusBadge, { backgroundColor: getStatusColor(r.status) }]}>
+                    {r.status.toUpperCase()}
+                  </Badge>
+                </View>
+                
+                {'result' in r && r.result !== undefined && (
+                  <>
+                    <Divider style={styles.divider} />
+                    <Text variant="bodySmall" style={styles.resultLabel}>
+                      Result:
+                    </Text>
+                    <Text variant="bodySmall" style={styles.resultText}>
+                      {typeof r.result === 'object'
+                        ? JSON.stringify(r.result, null, 2)
+                        : String(r.result)}
+                    </Text>
+                  </>
+                )}
+                
+                {r.error && (
+                  <>
+                    <Divider style={styles.divider} />
+                    <Text variant="bodySmall" style={styles.errorLabel}>
+                      Error:
+                    </Text>
+                    <Text variant="bodySmall" style={styles.errorText}>
+                      {r.error}
+                    </Text>
+                  </>
+                )}
+              </Card.Content>
+            </Card>
           ))}
         </ScrollView>
       )}
-    </SafeAreaView>
+
+      <Portal>
+        <Dialog visible={showDialog} onDismiss={hideSummaryDialog}>
+          <Dialog.Title>Test Summary</Dialog.Title>
+          <Dialog.Content>
+            <View style={styles.summaryContent}>
+              <View style={styles.summaryRow}>
+                <Icon name="check-circle" size={20} color={theme.colors.primary} />
+                <Text variant="bodyMedium">Success: {getSummaryStats.successCount}</Text>
+              </View>
+              <View style={styles.summaryRow}>
+                <Icon name="alert-circle" size={20} color={theme.colors.error} />
+                <Text variant="bodyMedium">Error: {getSummaryStats.errorCount}</Text>
+              </View>
+              <View style={styles.summaryRow}>
+                <Icon name="help-circle" size={20} color={theme.colors.outline} />
+                <Text variant="bodyMedium">Not Available: {getSummaryStats.naCount}</Text>
+              </View>
+              <Divider style={styles.summaryDivider} />
+              <Text variant="titleMedium">Total: {testResults.length}</Text>
+            </View>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={hideSummaryDialog}>Close</Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
+    </Surface>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  header: { padding: 16, paddingBottom: 8 },
-  title: { fontSize: 20, fontWeight: '700', marginBottom: 4 },
-  subtitle: { fontSize: 14, color: '#666' },
-  note: { marginTop: 8, fontSize: 12, color: '#888' },
-  buttonRow: {
-    marginTop: 12,
+  container: {
+    flex: 1,
+  },
+  header: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  headerContent: {
+    marginBottom: 12,
+  },
+  platformInfo: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 12,
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  platformText: {
+    marginLeft: 8,
+  },
+  note: {
+    marginBottom: 12,
+    opacity: 0.7,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  statsBadge: {
+    paddingHorizontal: 8,
+  },
+  runButton: {
+    marginHorizontal: 16,
+    marginBottom: 8,
   },
   loadingBox: {
     margin: 16,
-    padding: 20,
-    borderRadius: 12,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#ddd',
+    padding: 24,
     alignItems: 'center',
-  },
-  loadingText: { marginTop: 10, color: '#666' },
-  scroll: { flex: 1, padding: 16 },
-  item: {
-    padding: 12,
     borderRadius: 12,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#eee',
-    marginBottom: 10,
-    backgroundColor: '#fafafa',
   },
-  name: { fontSize: 14, fontWeight: '600' },
-  result: {
-    marginTop: 6,
-    fontSize: 13,
-    color: '#333',
+  loadingText: {
+    marginTop: 12,
+  },
+  scroll: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
+  testCard: {
+    marginBottom: 8,
+  },
+  testHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  testTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 8,
+  },
+  testName: {
+    marginLeft: 8,
+    flex: 1,
+  },
+  statusBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  divider: {
+    marginVertical: 8,
+  },
+  resultLabel: {
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  resultText: {
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    opacity: 0.8,
+  },
+  errorLabel: {
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  errorText: {
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
   },
-  error: {
-    marginTop: 6,
-    fontSize: 13,
-    color: '#dc3545',
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+  summaryContent: {
+    gap: 8,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  summaryDivider: {
+    marginVertical: 8,
   },
 });
 

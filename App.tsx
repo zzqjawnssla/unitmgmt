@@ -11,16 +11,24 @@ import {
   SafeAreaProvider,
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
-import LinkTestComponent from './LinkTestComponent.tsx';
+import { Provider as PaperProvider } from 'react-native-paper';
+import { LoginScreen } from './src/screens/Intro/LoginScreen.tsx';
+import { AuthContextProvider } from './src/store/AuthContext.tsx';
+
+if (__DEV__) {
+  require('./ReactotronConfig');
+}
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
 
   return (
-    <SafeAreaProvider>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <AppContent />
-    </SafeAreaProvider>
+    <PaperProvider>
+      <SafeAreaProvider>
+        <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
+        <AppContent />
+      </SafeAreaProvider>
+    </PaperProvider>
   );
 }
 
@@ -33,7 +41,10 @@ function AppContent() {
       {/*  templateFileName="App.tsx"*/}
       {/*  safeAreaInsets={safeAreaInsets}*/}
       {/*/>*/}
-      <LinkTestComponent/>
+      <AuthContextProvider>
+        <LoginScreen />
+      </AuthContextProvider>
+      {/*<Security/>*/}
     </View>
   );
 }
