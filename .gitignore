@@ -56,6 +56,10 @@ yarn-error.log
 # Bundle artifact
 *.jsbundle
 
+# APK files (build artifacts)
+*.apk
+*.aab
+
 # Ruby / CocoaPods
 **/Pods/
 /vendor/bundle/
