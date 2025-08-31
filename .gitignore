@@ -120,6 +120,7 @@ app/release/
 app/debug/output.json
 app/src/*/res/values/secrets.xml
 signing.properties
+keystore.properties
 
 # iOS specific sensitive files
 ios/GoogleService-Info.plist

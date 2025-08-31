@@ -2435,6 +2435,65 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
+  - RNScreens (4.15.4):
+    - boost
+    - DoubleConversion
+    - fast_float
+    - fmt
+    - glog
+    - hermes-engine
+    - RCT-Folly
+    - RCT-Folly/Fabric
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-RCTImage
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - RNScreens/common (= 4.15.4)
+    - SocketRocket
+    - Yoga
+  - RNScreens/common (4.15.4):
+    - boost
+    - DoubleConversion
+    - fast_float
+    - fmt
+    - glog
+    - hermes-engine
+    - RCT-Folly
+    - RCT-Folly/Fabric
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-RCTImage
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - SocketRocket
+    - Yoga
   - RNVectorIcons (10.3.0):
     - boost
     - DoubleConversion
@@ -2558,6 +2617,7 @@ DEPENDENCIES:
   - RNFileViewer (from `../node_modules/react-native-file-viewer`)
   - RNFS (from `../node_modules/react-native-fs`)
   - RNPermissions (from `../node_modules/react-native-permissions`)
+  - RNScreens (from `../node_modules/react-native-screens`)
   - RNVectorIcons (from `../node_modules/react-native-vector-icons`)
   - SDWebImage
   - SDWebImageSVGCoder
@@ -2730,6 +2790,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-fs"
   RNPermissions:
     :path: "../node_modules/react-native-permissions"
+  RNScreens:
+    :path: "../node_modules/react-native-screens"
   RNVectorIcons:
     :path: "../node_modules/react-native-vector-icons"
   VisionCamera:
@@ -2816,6 +2878,7 @@ SPEC CHECKSUMS:
   RNFileViewer: 4b5d83358214347e4ab2d4ca8d5c1c90d869e251
   RNFS: 89de7d7f4c0f6bafa05343c578f61118c8282ed8
   RNPermissions: 56d8a958b1d8cf7f4c30a732619b7b6b6b92bfda
+  RNScreens: db22525a8ed56bb87ab038b8f03a050bf40e6ed8
   RNVectorIcons: 791f13226ec4a3fd13062eda9e892159f0981fae
   SDWebImage: f29024626962457f3470184232766516dee8dfea
   SDWebImageSVGCoder: 8e10c8f6cc879c7dfb317b284e13dd589379f01c
