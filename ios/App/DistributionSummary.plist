@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>unitmgmt.ipa</key>
+	<array>
+		<dict>
+			<key>architectures</key>
+			<array>
+				<string>arm64</string>
+			</array>
+			<key>buildNumber</key>
+			<string>1</string>
+			<key>certificate</key>
+			<dict>
+				<key>SHA1</key>
+				<string>4A04D0F3302EF0EF174DA7EA446CB051F8CA3A53</string>
+				<key>dateExpires</key>
+				<string>3/27/27</string>
+				<key>type</key>
+				<string>Cloud Managed iOS Distribution</string>
+			</dict>
+			<key>embeddedBinaries</key>
+			<array>
+				<dict>
+					<key>architectures</key>
+					<array>
+						<string>arm64</string>
+					</array>
+					<key>buildNumber</key>
+					<string>0.12.0</string>
+					<key>certificate</key>
+					<dict>
+						<key>SHA1</key>
+						<string>4A04D0F3302EF0EF174DA7EA446CB051F8CA3A53</string>
+						<key>dateExpires</key>
+						<string>3/27/27</string>
+						<key>type</key>
+						<string>Cloud Managed iOS Distribution</string>
+					</dict>
+					<key>name</key>
+					<string>hermes.framework</string>
+					<key>team</key>
+					<dict>
+						<key>id</key>
+						<string>6424KNQSXK</string>
+						<key>name</key>
+						<string>SK ons Co., Ltd</string>
+					</dict>
+					<key>versionNumber</key>
+					<string>0.12.0</string>
+				</dict>
+			</array>
+			<key>entitlements</key>
+			<dict>
+				<key>application-identifier</key>
+				<string>6424KNQSXK.sko.com.unitmgmt</string>
+				<key>com.apple.developer.team-identifier</key>
+				<string>6424KNQSXK</string>
+				<key>get-task-allow</key>
+				<false/>
+			</dict>
+			<key>name</key>
+			<string>unitmgmt.app</string>
+			<key>profile</key>
+			<dict>
+				<key>UUID</key>
+				<string>699827df-7c54-4d13-9da2-6449b21e4b81</string>
+				<key>dateExpires</key>
+				<string>9/1/26</string>
+				<key>name</key>
+				<string>iOS Team Inhouse Provisioning Profile: sko.com.unitmgmt</string>
+			</dict>
+			<key>team</key>
+			<dict>
+				<key>id</key>
+				<string>6424KNQSXK</string>
+				<key>name</key>
+				<string>SK ons Co., Ltd</string>
+			</dict>
+			<key>versionNumber</key>
+			<string>1.0</string>
+		</dict>
+	</array>
+</dict>
+</plist>

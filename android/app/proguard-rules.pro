@@ -88,10 +88,10 @@
 -keep class com.facebook.jni.** { *; }
 
 # 앱 패키지 보호
--keep class com.otums.** { *; }
+-keep class com.unitmgmt.** { *; }
 
 # BuildConfig 보호
--keep class com.otums.BuildConfig { *; }
+-keep class com.unitmgmt.BuildConfig { *; }
 
 # R 파일 보호
 -keepclassmembers class **.R$* {

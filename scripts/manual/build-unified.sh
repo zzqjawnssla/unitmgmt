@@ -60,7 +60,7 @@ if [ $? -eq 0 ]; then
         echo "  adb install $APK_FILE"
         
         # 7. Copy with version naming
-        FINAL_APK_NAME="otums-v${VERSION}-release.apk"
+        FINAL_APK_NAME="unitmgmt-v${VERSION}-release.apk"
         cp "$APK_FILE" "app/$FINAL_APK_NAME"
         echo -e "\n${YELLOW}📦 APK copied to:${NC}"
         echo "  android/app/$FINAL_APK_NAME"

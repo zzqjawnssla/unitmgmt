@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# 통합 릴리스 및 배포 스크립트
-# 버전 업데이트, APK 빌드, S3 업로드, DynamoDB 메타데이터 저장
+# iOS 릴리스 및 배포 스크립트
+# 수동 빌드된 IPA 파일을 S3에 업로드하고 DynamoDB 메타데이터를 저장
 
 set -e
 
@@ -21,22 +21,6 @@ else
     exit 1
 fi
 
-# ENV_MODE 확인 - dev 모드일 때 경고
-if [ "${ENV_MODE}" = "dev" ]; then
-    echo -e "${RED}⚠️  Warning: ENV_MODE is set to 'dev'${NC}"
-    echo -e "${YELLOW}Production release should use ENV_MODE=prd${NC}"
-    echo -e "${YELLOW}Please update your .env file to set ENV_MODE=prd${NC}"
-    echo ""
-    echo -e "${CYAN}Do you want to continue with dev mode? (y/n):${NC}"
-    read -r CONTINUE_DEV
-    if [[ "$CONTINUE_DEV" != "y" ]] && [[ "$CONTINUE_DEV" != "Y" ]]; then
-        echo -e "${YELLOW}Exiting. Please update ENV_MODE to 'prd' in .env file.${NC}"
-        exit 1
-    fi
-    echo -e "${YELLOW}Continuing with dev mode...${NC}"
-    echo ""
-fi
-
 # 프로젝트 루트 디렉토리 확인
 if [ ! -f "package.json" ]; then
     echo -e "${RED}Error: package.json not found. Please run this script from the project root.${NC}"
@@ -53,24 +37,29 @@ fi
 # 함수: 사용법 출력
 show_usage() {
     echo -e "${CYAN}Usage:${NC}"
-    echo "  $0 [patch|minor|major] [options]"
+    echo "  $0 [patch|minor|major] --ipa-path PATH [options]"
+    echo ""
+    echo -e "${CYAN}Required:${NC}"
+    echo "  --ipa-path PATH         IPA 파일 경로 (필수)"
     echo ""
     echo -e "${CYAN}Options:${NC}"
+    echo "  --manifest-path PATH    Manifest.plist 파일 경로 (선택사항)"
+    echo "  --bundle-id ID          Bundle ID (선택사항, 기본값: com.unitmgmt)"
     echo "  --release-notes \"notes\"  릴리스 노트 (선택사항)"
-    echo "  --skip-build            빌드 건너뛰기"
     echo "  --skip-upload           업로드 건너뛰기"
     echo "  --dry-run               실제 작업 수행하지 않고 시뮬레이션만 실행"
     echo ""
     echo -e "${CYAN}Examples:${NC}"
-    echo "  $0 patch --release-notes \"버그 수정 및 성능 개선\""
-    echo "  $0 minor --release-notes \"새로운 기능 추가\""
-    echo "  $0 major --release-notes \"주요 업데이트\""
+    echo "  $0 patch --ipa-path ./ios/build/unitmgmt.ipa --release-notes \"iOS 버그 수정\""
+    echo "  $0 minor --ipa-path ./build/unitmgmt-v1.2.0.ipa --manifest-path ./build/manifest.plist"
 }
 
 # 파라미터 파싱
 VERSION_TYPE=${1:-patch}
+IPA_PATH=""
+MANIFEST_PATH=""
+BUNDLE_ID="com.unitmgmt"
 RELEASE_NOTES=""
-SKIP_BUILD=false
 SKIP_UPLOAD=false
 DRY_RUN=false
 
@@ -84,13 +73,21 @@ fi
 # Parse additional options
 while [[ $# -gt 0 ]]; do
     case $1 in
+        --ipa-path)
+            IPA_PATH="$2"
+            shift 2
+            ;;
+        --manifest-path)
+            MANIFEST_PATH="$2"
+            shift 2
+            ;;
+        --bundle-id)
+            BUNDLE_ID="$2"
+            shift 2
+            ;;
         --release-notes)
             RELEASE_NOTES="$2"
             shift 2
-            ;;
-        --skip-build)
-            SKIP_BUILD=true
-            shift
             ;;
         --skip-upload)
             SKIP_UPLOAD=true
@@ -112,6 +109,25 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+# IPA 경로 필수 체크
+if [ -z "$IPA_PATH" ]; then
+    echo -e "${RED}Error: --ipa-path is required${NC}"
+    show_usage
+    exit 1
+fi
+
+# IPA 파일 존재 확인
+if [ ! -f "$IPA_PATH" ]; then
+    echo -e "${RED}Error: IPA file not found at: $IPA_PATH${NC}"
+    exit 1
+fi
+
+# Manifest 파일 존재 확인 (제공된 경우)
+if [ -n "$MANIFEST_PATH" ] && [ ! -f "$MANIFEST_PATH" ]; then
+    echo -e "${RED}Error: Manifest file not found at: $MANIFEST_PATH${NC}"
+    exit 1
+fi
+
 # 릴리스 노트가 없으면 입력 받기
 if [ -z "$RELEASE_NOTES" ]; then
     echo -e "${YELLOW}📝 Enter release notes (press Enter for default):${NC}"
@@ -119,13 +135,13 @@ if [ -z "$RELEASE_NOTES" ]; then
     if [ -z "$USER_NOTES" ]; then
         case $VERSION_TYPE in
             patch)
-                RELEASE_NOTES="버그 수정 및 성능 개선"
+                RELEASE_NOTES="iOS 버그 수정 및 성능 개선"
                 ;;
             minor)
-                RELEASE_NOTES="새로운 기능 추가 및 개선"
+                RELEASE_NOTES="iOS 새로운 기능 추가 및 개선"
                 ;;
             major)
-                RELEASE_NOTES="주요 업데이트"
+                RELEASE_NOTES="iOS 주요 업데이트"
                 ;;
         esac
     else
@@ -134,7 +150,7 @@ if [ -z "$RELEASE_NOTES" ]; then
 fi
 
 echo -e "${CYAN}═══════════════════════════════════════════════════════════════${NC}"
-echo -e "${CYAN}       📱 Unit Management Release & Deploy Pipeline 📱${NC}"
+echo -e "${CYAN}       📱 iOS Unit Management Release & Deploy Pipeline 📱${NC}"
 echo -e "${CYAN}═══════════════════════════════════════════════════════════════${NC}"
 echo ""
 
@@ -159,136 +175,118 @@ VERSION_CODE=$(echo $NEW_VERSION | awk -F. '{print $1*10000 + $2*100 + $3}')
 
 echo -e "${GREEN}✅ Version bumped to: ${NEW_VERSION} (code: ${VERSION_CODE})${NC}"
 
-# 2. APK 빌드
-if [ "$SKIP_BUILD" = false ]; then
-    echo -e "\n${BLUE}Step 2: Building APK${NC}"
-    echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    
-    if [ "$DRY_RUN" = true ]; then
-        echo -e "${CYAN}[DRY RUN] Would build APK...${NC}"
-        APK_FILE="android/app/unitmgmt-v${NEW_VERSION}-release.apk"
-        APK_SIZE_BYTES=50000000  # 가상 크기
-    else
-        # Clean previous builds
-        echo -e "${YELLOW}🧹 Cleaning previous builds...${NC}"
-        cd android
-        ./gradlew clean
-        
-        # Build release APK
-        echo -e "${YELLOW}🔨 Building release APK...${NC}"
-        ./gradlew assembleRelease
-        
-        if [ $? -eq 0 ]; then
-            echo -e "${GREEN}✅ Build successful!${NC}"
-            
-            # Find and copy APK
-            BUILT_APK=$(find app/build/outputs/apk/release -name "*.apk" | head -1)
-            if [ -n "$BUILT_APK" ]; then
-                FINAL_APK_NAME="unitmgmt-v${NEW_VERSION}-release.apk"
-                cp "$BUILT_APK" "app/$FINAL_APK_NAME"
-                APK_FILE="android/app/$FINAL_APK_NAME"
-                APK_SIZE_BYTES=$(stat -f%z "$BUILT_APK" 2>/dev/null || stat -c%s "$BUILT_APK" 2>/dev/null)
-                echo -e "${GREEN}✅ APK created: $FINAL_APK_NAME${NC}"
-            else
-                echo -e "${RED}❌ No APK file found!${NC}"
-                exit 1
-            fi
-        else
-            echo -e "${RED}❌ Build failed!${NC}"
-            exit 1
-        fi
-        
-        cd ..
-    fi
-else
-    echo -e "\n${YELLOW}⏭ Skipping build step${NC}"
-    APK_FILE="android/app/unitmgmt-v${NEW_VERSION}-release.apk"
-    if [ -f "$APK_FILE" ]; then
-        APK_SIZE_BYTES=$(stat -f%z "$APK_FILE" 2>/dev/null || stat -c%s "$APK_FILE" 2>/dev/null)
-    else
-        echo -e "${RED}❌ APK file not found: $APK_FILE${NC}"
-        exit 1
-    fi
-fi
+# IPA 파일 정보
+IPA_SIZE_BYTES=$(stat -f%z "$IPA_PATH" 2>/dev/null || stat -c%s "$IPA_PATH" 2>/dev/null)
+IPA_SIZE_MB=$((IPA_SIZE_BYTES / 1024 / 1024))
+IPA_FILENAME="unitmgmt-v${NEW_VERSION}-release.ipa"
 
-# 3. S3 업로드
+echo -e "${GREEN}📱 IPA Information:${NC}"
+echo -e "  • Path: ${CYAN}${IPA_PATH}${NC}"
+echo -e "  • Size: ${CYAN}${IPA_SIZE_MB} MB${NC}"
+echo -e "  • Target filename: ${CYAN}${IPA_FILENAME}${NC}"
+
+# 2. S3 업로드
 if [ "$SKIP_UPLOAD" = false ]; then
-    echo -e "\n${BLUE}Step 3: Upload to S3${NC}"
+    echo -e "\n${BLUE}Step 2: Upload to S3${NC}"
     echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     
-    S3_KEY="${AWS_S3_PREFIX}/unitmgmt-v${NEW_VERSION}-release.apk"
+    # iOS 전용 S3 prefix 사용
+    IOS_S3_PREFIX="${AWS_S3_PREFIX/android/ios}"
+    S3_KEY="${IOS_S3_PREFIX}/${IPA_FILENAME}"
     S3_URL="https://${AWS_S3_BUCKET}.s3.${AWS_REGION}.amazonaws.com/${S3_KEY}"
     
     if [ "$DRY_RUN" = true ]; then
-        echo -e "${CYAN}[DRY RUN] Would upload to: s3://${AWS_S3_BUCKET}/${S3_KEY}${NC}"
+        echo -e "${CYAN}[DRY RUN] Would upload IPA to: s3://${AWS_S3_BUCKET}/${S3_KEY}${NC}"
+        if [ -n "$MANIFEST_PATH" ]; then
+            MANIFEST_S3_KEY="${IOS_S3_PREFIX}/manifest-v${NEW_VERSION}.plist"
+            echo -e "${CYAN}[DRY RUN] Would upload Manifest to: s3://${AWS_S3_BUCKET}/${MANIFEST_S3_KEY}${NC}"
+        fi
     else
-        echo -e "${YELLOW}📤 Uploading APK to S3...${NC}"
+        echo -e "${YELLOW}📤 Uploading IPA to S3...${NC}"
         
-        # APK 파일 크기 가져오기 (MB 단위로 표시)
-        APK_SIZE_MB=$((APK_SIZE_BYTES / 1024 / 1024))
-        echo -e "${CYAN}📊 File size: ${APK_SIZE_MB}MB${NC}"
-        
-        # S3 업로드
-        echo -e "${CYAN}🔄 Uploading... Please wait${NC}"
-        aws s3 cp "$APK_FILE" "s3://${AWS_S3_BUCKET}/${S3_KEY}" \
+        # IPA 업로드
+        echo -e "${CYAN}🔄 Uploading IPA... Please wait${NC}"
+        aws s3 cp "$IPA_PATH" "s3://${AWS_S3_BUCKET}/${S3_KEY}" \
             --region ${AWS_REGION} \
-            --metadata "version=${NEW_VERSION},versionCode=${VERSION_CODE}" \
+            --metadata "version=${NEW_VERSION},versionCode=${VERSION_CODE},platform=ios" \
             --cli-read-timeout 0 \
             --cli-connect-timeout 60
         
         if [ $? -eq 0 ]; then
-            echo -e "${GREEN}✅ Upload successful!${NC}"
+            echo -e "${GREEN}✅ IPA upload successful!${NC}"
             echo -e "${CYAN}📍 S3 URL: ${S3_URL}${NC}"
         else
-            echo -e "${RED}❌ Upload failed!${NC}"
+            echo -e "${RED}❌ IPA upload failed!${NC}"
             exit 1
+        fi
+        
+        # Manifest 업로드 (제공된 경우)
+        if [ -n "$MANIFEST_PATH" ]; then
+            MANIFEST_S3_KEY="${IOS_S3_PREFIX}/manifest-v${NEW_VERSION}.plist"
+            MANIFEST_S3_URL="https://${AWS_S3_BUCKET}.s3.${AWS_REGION}.amazonaws.com/${MANIFEST_S3_KEY}"
+            
+            echo -e "${YELLOW}📤 Uploading Manifest to S3...${NC}"
+            aws s3 cp "$MANIFEST_PATH" "s3://${AWS_S3_BUCKET}/${MANIFEST_S3_KEY}" \
+                --region ${AWS_REGION} \
+                --content-type "application/xml" \
+                --cli-read-timeout 0 \
+                --cli-connect-timeout 60
+            
+            if [ $? -eq 0 ]; then
+                echo -e "${GREEN}✅ Manifest upload successful!${NC}"
+                echo -e "${CYAN}📍 Manifest URL: ${MANIFEST_S3_URL}${NC}"
+            else
+                echo -e "${YELLOW}⚠️ Manifest upload failed, but continuing...${NC}"
+                MANIFEST_S3_URL=""
+            fi
         fi
     fi
 else
     echo -e "\n${YELLOW}⏭ Skipping upload step${NC}"
-    S3_KEY="${AWS_S3_PREFIX}/unitmgmt-v${NEW_VERSION}-release.apk"
+    IOS_S3_PREFIX="${AWS_S3_PREFIX/android/ios}"
+    S3_KEY="${IOS_S3_PREFIX}/${IPA_FILENAME}"
     S3_URL="https://${AWS_S3_BUCKET}.s3.${AWS_REGION}.amazonaws.com/${S3_KEY}"
 fi
 
-# 4. DynamoDB 메타데이터 저장
-echo -e "\n${BLUE}Step 4: Update DynamoDB Metadata${NC}"
+# 3. DynamoDB 메타데이터 저장
+echo -e "\n${BLUE}Step 3: Update DynamoDB Metadata${NC}"
 echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 
-# 메타데이터 준비
+# iOS 테이블 사용
+IOS_TABLE="mobile-app-ios-versions"
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-APK_SIZE_KB=$((APK_SIZE_BYTES / 1024))
-APK_FILENAME="unitmgmt-v${NEW_VERSION}-release.apk"
+IPA_SIZE_BYTES_NUM=$IPA_SIZE_BYTES
 
 # 이전 활성 버전 비활성화
 if [ "$DRY_RUN" = true ]; then
-    echo -e "${CYAN}[DRY RUN] Would deactivate previous active versions${NC}"
+    echo -e "${CYAN}[DRY RUN] Would deactivate previous active iOS versions${NC}"
 else
-    echo -e "${YELLOW}🔄 Deactivating previous active versions...${NC}"
+    echo -e "${YELLOW}🔄 Deactivating previous active iOS versions...${NC}"
     
     # 현재 활성 버전 조회 및 비활성화
     aws dynamodb query \
-        --table-name ${AWS_DYNAMODB_TABLE} \
+        --table-name ${IOS_TABLE} \
         --key-condition-expression "app_id = :app_id" \
         --filter-expression "is_active = :active AND platform = :platform" \
         --expression-attribute-values '{
             ":app_id": {"S": "'${APP_ID}'"},
             ":active": {"BOOL": true},
-            ":platform": {"S": "android"}
+            ":platform": {"S": "ios"}
         }' \
         --region ${AWS_REGION} \
         --output json | \
     jq -r '.Items[] | .version_code.N' | \
     while read -r old_version_code; do
         if [ -n "$old_version_code" ]; then
-            echo "  Deactivating version: $old_version_code"
+            echo "  Deactivating iOS version: $old_version_code"
             aws dynamodb update-item \
-                --table-name ${AWS_DYNAMODB_TABLE} \
+                --table-name ${IOS_TABLE} \
                 --key '{
                     "app_id": {"S": "'${APP_ID}'"},
                     "version_code": {"N": "'${old_version_code}'"}
                 }' \
                 --update-expression "SET is_active = :inactive" \
-                --expression-attribute-values '{":inactive": {"BOOL": false}}' \
+                --expression-attribute-values '{"inactive": {"BOOL": false}}' \
                 --region ${AWS_REGION} > /dev/null 2>&1
         fi
     done
@@ -296,63 +294,65 @@ fi
 
 # 새 버전 메타데이터 저장
 if [ "$DRY_RUN" = true ]; then
-    echo -e "${CYAN}[DRY RUN] Would save metadata to DynamoDB:${NC}"
+    echo -e "${CYAN}[DRY RUN] Would save iOS metadata to DynamoDB:${NC}"
     echo "  app_id: ${APP_ID}"
-    echo "  platform_version: ${PLATFORM_VERSION}"
+    echo "  version_code: ${VERSION_CODE}"
     echo "  version_name: ${NEW_VERSION}"
+    echo "  bundle_id: ${BUNDLE_ID}"
     echo "  release_notes: ${RELEASE_NOTES}"
 else
-    echo -e "${YELLOW}💾 Saving new version metadata...${NC}"
+    echo -e "${YELLOW}💾 Saving new iOS version metadata...${NC}"
     
-    # JSON 파일로 item 데이터를 준비하여 Korean 문자 처리
-    cat > /tmp/dynamodb_item.json << EOF
-{
-    "app_id": {"S": "${APP_ID}"},
-    "version_code": {"N": "${VERSION_CODE}"},
-    "platform": {"S": "android"},
-    "version_name": {"S": "${NEW_VERSION}"},
-    "filename": {"S": "${APK_FILENAME}"},
-    "file_size": {"N": "${APK_SIZE_BYTES}"},
-    "created_at": {"S": "${TIMESTAMP}"},
-    "release_date": {"S": "$(date -u +"%Y-%m-%d")"},
-    "download_url": {"S": "${S3_URL}"},
-    "download_count": {"N": "0"},
-    "is_active": {"BOOL": true},
-    "release_notes": {"S": "${RELEASE_NOTES}"}
-}
-EOF
+    # iOS 메타데이터 항목 구성
+    METADATA_ITEM='{
+        "app_id": {"S": "'${APP_ID}'"},
+        "version_code": {"N": "'${VERSION_CODE}'"},
+        "platform": {"S": "ios"},
+        "version_name": {"S": "'${NEW_VERSION}'"},
+        "bundle_id": {"S": "'${BUNDLE_ID}'"},
+        "filename": {"S": "'${IPA_FILENAME}'"},
+        "file_size": {"N": "'${IPA_SIZE_BYTES_NUM}'"},
+        "created_at": {"S": "'${TIMESTAMP}'"},
+        "release_date": {"S": "'${TIMESTAMP}'"},
+        "download_url": {"S": "'${S3_URL}'"},
+        "download_count": {"N": "0"},
+        "is_active": {"BOOL": true},
+        "release_notes": {"S": "'${RELEASE_NOTES}'"}
+    }'
+    
+    # Manifest URL 추가 (있는 경우)
+    if [ -n "$MANIFEST_S3_URL" ]; then
+        METADATA_ITEM=$(echo "$METADATA_ITEM" | sed 's/}$/,"manifest_url": {"S": "'${MANIFEST_S3_URL}'"}}/')
+    fi
     
     aws dynamodb put-item \
-        --table-name ${AWS_DYNAMODB_TABLE} \
-        --item file:///tmp/dynamodb_item.json \
+        --table-name ${IOS_TABLE} \
+        --item "$METADATA_ITEM" \
         --region ${AWS_REGION}
     
-    # 임시 파일 삭제
-    rm -f /tmp/dynamodb_item.json
-    
     if [ $? -eq 0 ]; then
-        echo -e "${GREEN}✅ Metadata saved successfully!${NC}"
+        echo -e "${GREEN}✅ iOS metadata saved successfully!${NC}"
     else
-        echo -e "${RED}❌ Failed to save metadata!${NC}"
+        echo -e "${RED}❌ Failed to save iOS metadata!${NC}"
         exit 1
     fi
 fi
 
-# 5. Git 커밋 (선택사항)
-echo -e "\n${BLUE}Step 5: Git Operations${NC}"
+# 4. Git 커밋 (선택사항)
+echo -e "\n${BLUE}Step 4: Git Operations${NC}"
 echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 
 if [ "$DRY_RUN" = true ]; then
     echo -e "${CYAN}[DRY RUN] Suggested git commands:${NC}"
     echo "  git add -A"
-    echo "  git commit -m \"chore: release v${NEW_VERSION} - ${RELEASE_NOTES}\""
-    echo "  git tag v${NEW_VERSION}"
+    echo "  git commit -m \"chore: iOS release v${NEW_VERSION} - ${RELEASE_NOTES}\""
+    echo "  git tag ios-v${NEW_VERSION}"
     echo "  git push origin main --tags"
 else
     echo -e "${YELLOW}💡 Suggested git commands:${NC}"
     echo -e "${CYAN}git add -A${NC}"
-    echo -e "${CYAN}git commit -m \"chore: release v${NEW_VERSION} - ${RELEASE_NOTES}\"${NC}"
-    echo -e "${CYAN}git tag v${NEW_VERSION}${NC}"
+    echo -e "${CYAN}git commit -m \"chore: iOS release v${NEW_VERSION} - ${RELEASE_NOTES}\"${NC}"
+    echo -e "${CYAN}git tag ios-v${NEW_VERSION}${NC}"
     echo -e "${CYAN}git push origin main --tags${NC}"
     echo ""
     echo -e "${YELLOW}Do you want to execute these commands? (y/n):${NC}"
@@ -360,8 +360,8 @@ else
     
     if [[ "$EXECUTE_GIT" == "y" ]] || [[ "$EXECUTE_GIT" == "Y" ]]; then
         git add -A
-        git commit -m "chore: release v${NEW_VERSION} - ${RELEASE_NOTES}"
-        git tag "v${NEW_VERSION}"
+        git commit -m "chore: iOS release v${NEW_VERSION} - ${RELEASE_NOTES}"
+        git tag "ios-v${NEW_VERSION}"
         echo -e "${GREEN}✅ Git commit and tag created${NC}"
         echo -e "${YELLOW}Push to remote? (y/n):${NC}"
         read -r PUSH_GIT
@@ -374,24 +374,23 @@ fi
 
 # 완료 요약
 echo -e "\n${CYAN}═══════════════════════════════════════════════════════════════${NC}"
-echo -e "${GREEN}       🎉 Release Pipeline Complete! 🎉${NC}"
+echo -e "${GREEN}       🎉 iOS Release Pipeline Complete! 🎉${NC}"
 echo -e "${CYAN}═══════════════════════════════════════════════════════════════${NC}"
 echo ""
 echo -e "${GREEN}📊 Summary:${NC}"
+echo -e "  • Platform: ${CYAN}iOS${NC}"
 echo -e "  • Version: ${CYAN}${NEW_VERSION}${NC} (Code: ${VERSION_CODE})"
-echo -e "  • APK Size: ${CYAN}$((APK_SIZE_KB / 1024)) MB${NC} (${APK_SIZE_KB} KB)"
+echo -e "  • IPA Size: ${CYAN}${IPA_SIZE_MB} MB${NC}"
+echo -e "  • Bundle ID: ${CYAN}${BUNDLE_ID}${NC}"
 echo -e "  • S3 Location: ${CYAN}s3://${AWS_S3_BUCKET}/${S3_KEY}${NC}"
 echo -e "  • Download URL: ${CYAN}${S3_URL}${NC}"
+if [ -n "$MANIFEST_S3_URL" ]; then
+echo -e "  • Manifest URL: ${CYAN}${MANIFEST_S3_URL}${NC}"
+fi
 echo -e "  • DynamoDB Key: ${CYAN}${APP_ID} / ${VERSION_CODE}${NC}"
+echo -e "  • DynamoDB Table: ${CYAN}${IOS_TABLE}${NC}"
 echo -e "  • Release Notes: ${CYAN}${RELEASE_NOTES}${NC}"
 echo -e "  • Status: ${GREEN}Active${NC}"
-echo ""
-
-# iOS 배포 안내
-echo -e "${BLUE}📱 Next Steps:${NC}"
-echo -e "  • ${YELLOW}iOS Deployment Required${NC}: Run iOS release script for complete deployment"
-echo -e "  • Command: ${CYAN}./scripts/ios-release-and-deploy.sh${NC}"
-echo -e "  • This will build and deploy the iOS version with the same version number"
 echo ""
 
 if [ "$DRY_RUN" = true ]; then

@@ -11,7 +11,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 // Screens
 import { LoginScreen } from '../screens/Intro/LoginScreen';
 import Security from '../screens/Intro/Security';
-// import UpdateCheckScreen from '../screens/Intro/UpdateCheckScreen';
+import UpdateCheckScreen from '../screens/Intro/UpdateCheckScreen';
+import InitializationScreen from '../screens/Intro/InitializationScreen';
 
 // Main App Screens
 import HomeScreen from '../screens/Main/HomeScreen';
@@ -65,9 +66,18 @@ export type RootStackParamList = {
 };
 
 export type IntroStackParamList = {
+  Initialization: undefined;
   Login: undefined;
-  Security: undefined;
-  UpdateCheck: undefined;
+  Security: {
+    issues: string[];
+    hasError: boolean;
+    hasWarning: boolean;
+    overall: string;
+    showRejectScreen?: boolean;
+  };
+  UpdateCheck: {
+    updateInfo: any;
+  };
 };
 
 export type MainTabParamList = {
@@ -263,14 +273,15 @@ const HomeStackNavigation = () => {
 const IntroStackNavigator = () => {
   return (
     <IntroStack.Navigator
-      initialRouteName="Login"
+      initialRouteName="Initialization"
       screenOptions={{
         headerShown: false,
       }}
     >
-      <IntroStack.Screen name="Login" component={LoginScreen} />
+      <IntroStack.Screen name="Initialization" component={InitializationScreen} />
       <IntroStack.Screen name="Security" component={Security} />
-      {/*<IntroStack.Screen name="UpdateCheck" component={UpdateCheckScreen} />*/}
+      <IntroStack.Screen name="UpdateCheck" component={UpdateCheckScreen} />
+      <IntroStack.Screen name="Login" component={LoginScreen} />
     </IntroStack.Navigator>
   );
 };

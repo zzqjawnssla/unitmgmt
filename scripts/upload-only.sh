@@ -21,6 +21,22 @@ else
     exit 1
 fi
 
+# ENV_MODE 확인 - dev 모드일 때 경고
+if [ "${ENV_MODE}" = "dev" ]; then
+    echo -e "${RED}⚠️  Warning: ENV_MODE is set to 'dev'${NC}"
+    echo -e "${YELLOW}Production upload should use ENV_MODE=prd${NC}"
+    echo -e "${YELLOW}Please update your .env file to set ENV_MODE=prd${NC}"
+    echo ""
+    echo -e "${CYAN}Do you want to continue with dev mode? (y/n):${NC}"
+    read -r CONTINUE_DEV
+    if [[ "$CONTINUE_DEV" != "y" ]] && [[ "$CONTINUE_DEV" != "Y" ]]; then
+        echo -e "${YELLOW}Exiting. Please update ENV_MODE to 'prd' in .env file.${NC}"
+        exit 1
+    fi
+    echo -e "${YELLOW}Continuing with dev mode...${NC}"
+    echo ""
+fi
+
 # 프로젝트 루트 디렉토리 확인
 if [ ! -f "package.json" ]; then
     echo -e "${RED}Error: package.json not found. Please run this script from the project root.${NC}"
@@ -212,23 +228,31 @@ if [[ "$SAVE_METADATA" == "y" ]] || [[ "$SAVE_METADATA" == "Y" ]]; then
     else
         echo -e "${YELLOW}💾 Saving metadata to DynamoDB...${NC}"
         
+        # JSON 파일로 item 데이터를 준비하여 Korean 문자 처리
+        cat > /tmp/dynamodb_item.json << EOF
+{
+    "app_id": {"S": "${APP_ID}"},
+    "version_code": {"N": "${VERSION_CODE}"},
+    "created_at": {"S": "${DB_TIMESTAMP}"},
+    "download_count": {"N": "0"},
+    "download_url": {"S": "${S3_URL}"},
+    "file_size": {"N": "${APK_SIZE_BYTES}"},
+    "filename": {"S": "${APK_FILENAME}"},
+    "is_active": {"BOOL": false},
+    "platform": {"S": "android"},
+    "release_date": {"S": "${RELEASE_DATE}"},
+    "release_notes": {"S": "${RELEASE_NOTES}"},
+    "version_name": {"S": "${CURRENT_VERSION}"}
+}
+EOF
+        
         aws dynamodb put-item \
             --table-name ${AWS_DYNAMODB_TABLE} \
-            --item '{
-                "app_id": {"S": "'${APP_ID}'"},
-                "version_code": {"N": "'${VERSION_CODE}'"},
-                "created_at": {"S": "'${DB_TIMESTAMP}'"},
-                "download_count": {"N": "0"},
-                "download_url": {"S": "'${S3_URL}'"},
-                "file_size": {"N": "'${APK_SIZE_BYTES}'"},
-                "filename": {"S": "'${APK_FILENAME}'"},
-                "is_active": {"BOOL": false},
-                "platform": {"S": "android"},
-                "release_date": {"S": "'${RELEASE_DATE}'"},
-                "release_notes": {"S": "'${RELEASE_NOTES}'"},
-                "version_name": {"S": "'${CURRENT_VERSION}'"}
-            }' \
+            --item file:///tmp/dynamodb_item.json \
             --region ${AWS_REGION}
+        
+        # 임시 파일 삭제
+        rm -f /tmp/dynamodb_item.json
         
         if [ $? -eq 0 ]; then
             echo -e "${GREEN}✅ Metadata saved successfully!${NC}"
@@ -253,6 +277,13 @@ echo -e "  • S3 Location: ${CYAN}s3://${AWS_S3_BUCKET}/${S3_KEY}${NC}"
 echo -e "  • Download URL: ${CYAN}${S3_URL}${NC}"
 echo -e "  • Release Notes: ${CYAN}${RELEASE_NOTES}${NC}"
 echo -e "  • Build Type: ${YELLOW}Test Build${NC}"
+echo ""
+
+# iOS 배포 안내
+echo -e "${BLUE}📱 Next Steps:${NC}"
+echo -e "  • ${YELLOW}iOS Upload Recommended${NC}: Consider uploading iOS version as well"
+echo -e "  • Command: ${CYAN}./scripts/ios-upload-only.sh${NC} (if available)"
+echo -e "  • This will upload the iOS version with the same version number"
 echo ""
 
 if [ "$DRY_RUN" = true ]; then

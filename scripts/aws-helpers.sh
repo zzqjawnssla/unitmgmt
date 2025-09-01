@@ -152,7 +152,7 @@ delete_apk_from_s3() {
         return 1
     fi
     
-    local S3_KEY="${AWS_S3_PREFIX}/otums-v${VERSION}-release.apk"
+    local S3_KEY="${AWS_S3_PREFIX}/unitmgmt-v${VERSION}-release.apk"
     
     echo -e "${YELLOW}🗑 Deleting APK v${VERSION} from S3...${NC}"
     aws s3 rm "s3://${AWS_S3_BUCKET}/${S3_KEY}" --region ${AWS_REGION}

@@ -1,4 +1,4 @@
-# 🚀 OTUMS 자동화 스크립트
+# 🚀 UNITMGMT 자동화 스크립트
 
 ## 📋 개요
 버전 관리, APK 빌드, AWS S3 업로드, DynamoDB 메타데이터 관리를 자동화하는 통합 스크립트 모음입니다.
@@ -51,10 +51,10 @@ AWS 관련 유틸리티 함수 모음
 4. **환경 변수 설정** (`.env` 파일)
    ```env
    AWS_S3_BUCKET=skons-mobile-app-bucket
-   AWS_S3_PREFIX=apk/otums/android
+   AWS_S3_PREFIX=apk/unitmgmt/android
    AWS_DYNAMODB_TABLE=app-versions
    AWS_REGION=ap-northeast-2
-   APP_ID=sko.company.otums
+   APP_ID=sko.company.unitmgmt
    ```
 
 ## 🚀 사용 방법
@@ -128,11 +128,11 @@ delete_version 1.0.0
 
 | 필드 | 타입 | 설명 | 예시 |
 |------|------|------|------|
-| `app_id` (PK) | String | 앱 식별자 | sko.company.otums |
+| `app_id` (PK) | String | 앱 식별자 | sko.company.unitmgmt |
 | `platform_version` (SK) | String | 플랫폼#버전코드 | android#00101 |
 | `platform` | String | 플랫폼 | android |
 | `version_name` | String | 버전 이름 | 1.0.1 |
-| `apk_filename` | String | APK 파일명 | otums-v1.0.1-release.apk |
+| `apk_filename` | String | APK 파일명 | unitmgmt-v1.0.1-release.apk |
 | `apk_size` | Number | 파일 크기 (KB) | 45312 |
 | `created_at` | String | 생성 시간 | 2024-01-15T10:30:00Z |
 | `release_date` | String | 릴리스 날짜 | 2024-01-15T10:30:00Z |
