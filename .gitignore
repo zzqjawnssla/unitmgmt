@@ -60,6 +60,10 @@ yarn-error.log
 *.apk
 *.aab
 
+# iOS App Bundle (build artifacts) 
+Payload/
+ios/App/Payload/
+
 # Ruby / CocoaPods
 **/Pods/
 /vendor/bundle/
