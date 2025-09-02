@@ -5,20 +5,28 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Card, Snackbar, Text } from 'react-native-paper';
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import { Snackbar, Text } from 'react-native-paper';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { scale, verticalScale } from 'react-native-size-matters';
 import moment from 'moment';
 import React, { useState } from 'react';
 import { api } from '../../services/api/api.tsx';
 import { useInfiniteQuery } from '@tanstack/react-query';
 
-// Brand Colors
-const BRAND_COLORS = {
+// KakaoTalk-style colors
+const COLORS = {
   primary: '#F47725',
-  background: '#FCFCFC',
-  surface: '#FFFFFF',
+  primaryLight: 'rgba(244, 119, 37, 0.1)',
+  background: '#FFFFFF',
+  surface: '#F7F7F7',
+  text: '#000000',
   textSecondary: '#666666',
+  textTertiary: '#999999',
+  border: '#E6E6E6',
+  divider: '#F0F0F0',
+  success: '#4CAF50',
+  warning: '#FF9500',
+  error: '#F44336',
 };
 
 type HistoryItem = {
@@ -64,10 +72,13 @@ type HistoryData = {
 };
 
 type UnitHistoryProps = {
-  result: {
-    skt_barcode: string;
-    [key: string]: any;
-  } | null | undefined;
+  result:
+    | {
+        skt_barcode: string;
+        [key: string]: any;
+      }
+    | null
+    | undefined;
 };
 
 export const UnitHistory = ({ result }: UnitHistoryProps) => {
@@ -94,7 +105,7 @@ export const UnitHistory = ({ result }: UnitHistoryProps) => {
       if (!result?.skt_barcode) {
         throw new Error('SKT 바코드가 없습니다.');
       }
-      
+
       if (pageParam) {
         // 다음 페이지 URL이 있는 경우
         const response = await api.get(pageParam);
@@ -102,7 +113,9 @@ export const UnitHistory = ({ result }: UnitHistoryProps) => {
       } else {
         // 첫 페이지
         const params = { skt_barcode: result.skt_barcode };
-        const response = await api.get('/apps/unit_manage_history_detail/', { params });
+        const response = await api.get('/apps/unit_manage_history_detail/', {
+          params,
+        });
         return response.data;
       }
     },
@@ -131,322 +144,192 @@ export const UnitHistory = ({ result }: UnitHistoryProps) => {
     return (
       <View style={styles.container}>
         <View style={styles.errorContainer}>
-          <Text variant="bodyMedium" style={styles.errorText}>
-            유니트 정보를 불러올 수 없습니다.
+          <MaterialCommunityIcons
+            name="alert-circle-outline"
+            size={scale(48)}
+            color={COLORS.textTertiary}
+            style={styles.errorIcon}
+          />
+          <Text style={styles.errorTitle}>
+            유니트 정보를 불러올 수 없습니다
+          </Text>
+          <Text style={styles.errorSubtext}>
+            바코드 정보가 없어 이력을 조회할 수 없어요
           </Text>
         </View>
         <Snackbar
           visible={snackbarVisible}
           onDismiss={() => setSnackbarVisible(false)}
           duration={3000}
+          style={styles.snackbar}
+          theme={{ colors: { primary: COLORS.primary } }}
           action={{
             label: '확인',
+            labelStyle: { color: COLORS.primary },
             onPress: () => setSnackbarVisible(false),
           }}
         >
-          {snackbarMessage}
+          <Text style={styles.snackbarText}>{snackbarMessage}</Text>
         </Snackbar>
       </View>
     );
   }
 
-  const renderHistoryItem = ({ item }: { item: HistoryItem }) => {
+  const renderHistoryItem = ({ item, index }: { item: HistoryItem; index: number }) => {
     const formattedData = item.created_at
       ? moment(item.created_at).format('YYYY-MM-DD HH:mm')
       : '';
 
     return (
-      <View style={styles.customCard}>
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'flex-end',
-            marginVertical: verticalScale(8),
-          }}
-        >
-          <Text variant="bodySmall" style={{ color: 'black' }}>
-            {formattedData}
-          </Text>
+      <View style={styles.historyItem}>
+        <View style={styles.timelineContainer}>
+          <View style={styles.timelineDot} />
+          {index < allHistoryItems.length - 1 && <View style={styles.timelineLine} />}
         </View>
-
-        {item?.location === '국소' && (
-          <>
-            <View style={styles.contentsContainer}>
-              <Text
-                variant="bodyMedium"
-                style={{
-                  color: BRAND_COLORS.textSecondary,
-                  fontWeight: 'bold',
-                }}
-              >
-                통시코드
-              </Text>
-              <Text
-                variant="bodyMedium"
-                style={{
-                  color: 'black',
-                  fontWeight: 'bold',
-                  maxWidth: scale(280),
-                }}
-                numberOfLines={1}
-                ellipsizeMode={'tail'}
-              >
-                {item?.location_context_instance?.zp_code}
-              </Text>
-            </View>
-            <View style={styles.locationNameContainer}>
-              <Text
-                variant="bodyMedium"
-                style={{
-                  color: BRAND_COLORS.textSecondary,
-                  fontWeight: 'bold',
-                }}
-              >
-                국소명
-              </Text>
-              <Text
-                variant="bodyMedium"
-                style={{
-                  color: 'black',
-                  fontWeight: 'bold',
-                  maxWidth: scale(320),
-                }}
-                numberOfLines={1}
-                ellipsizeMode={'tail'}
-              >
-                {item?.location_context_instance?.zp_name}
-              </Text>
-            </View>
-          </>
-        )}
-
-        {item.location === '창고' && (
-          <>
-            <View style={styles.contentsContainer}>
-              <Text
-                variant="bodyMedium"
-                style={{
-                  color: BRAND_COLORS.textSecondary,
-                  fontWeight: 'bold',
-                }}
-              >
-                통시코드
-              </Text>
-              <Text
-                variant="bodyMedium"
-                style={{
-                  color: 'black',
-                  fontWeight: 'bold',
-                  maxWidth: scale(320),
-                }}
-                numberOfLines={1}
-                ellipsizeMode={'tail'}
-              >
-                {item?.location_context_instance?.zp_code}
-              </Text>
-            </View>
-            <View style={styles.locationNameContainer}>
-              <Text
-                variant="bodyMedium"
-                style={{
-                  color: BRAND_COLORS.textSecondary,
-                  fontWeight: 'bold',
-                }}
-              >
-                창고명
-              </Text>
-              <Text
-                variant="bodyMedium"
-                style={{
-                  color: 'black',
-                  fontWeight: 'bold',
-                  maxWidth: scale(280),
-                }}
-                numberOfLines={1}
-                ellipsizeMode={'tail'}
-              >
-                {item?.location_context_instance?.warehouse_name}
-              </Text>
-            </View>
-          </>
-        )}
-
-        {item.location === '전진배치(집/중/통)' && (
-          <>
-            <View style={styles.contentsContainer}>
-              <Text
-                variant="bodyMedium"
-                style={{
-                  color: BRAND_COLORS.textSecondary,
-                  fontWeight: 'bold',
-                }}
-              >
-                통시코드
-              </Text>
-              <Text
-                variant="bodyMedium"
-                style={{
-                  color: 'black',
-                  fontWeight: 'bold',
-                  maxWidth: scale(320),
-                }}
-                numberOfLines={1}
-                ellipsizeMode={'tail'}
-              >
-                {item?.location_context_instance?.zp_code}
-              </Text>
-            </View>
-            <View style={styles.locationNameContainer}>
-              <Text
-                variant="bodyMedium"
-                style={{
-                  color: BRAND_COLORS.textSecondary,
-                  fontWeight: 'bold',
-                }}
-              >
-                기지국명
-              </Text>
-              <Text
-                variant="bodyMedium"
-                style={{
-                  color: 'black',
-                  fontWeight: 'bold',
-                  maxWidth: scale(280),
-                }}
-                numberOfLines={1}
-                ellipsizeMode={'tail'}
-              >
-                {item?.location_context_instance?.zp_name}
-              </Text>
-            </View>
-          </>
-        )}
-
-        {item.location === '차량보관' && (
-          <>
-            <View style={styles.contentsContainer}>
-              <Text
-                variant="bodyMedium"
-                style={{
-                  color: BRAND_COLORS.textSecondary,
-                  fontWeight: 'bold',
-                }}
-              >
-                차량관리부서
-              </Text>
-              <Text
-                variant="bodyMedium"
-                style={{
-                  color: 'black',
-                  fontWeight: 'bold',
-                  maxWidth: scale(320),
-                }}
-                numberOfLines={1}
-                ellipsizeMode={'tail'}
-              >
-                {item?.location_context_instance?.vehicle_manage_team}
-              </Text>
-            </View>
-            <View style={styles.locationNameContainer}>
-              <Text
-                variant="bodyMedium"
-                style={{
-                  color: BRAND_COLORS.textSecondary,
-                  fontWeight: 'bold',
-                }}
-              >
-                차량번호
-              </Text>
-              <Text
-                variant="bodyMedium"
-                style={{
-                  color: 'black',
-                  fontWeight: 'bold',
-                  maxWidth: scale(280),
-                }}
-                numberOfLines={1}
-                ellipsizeMode={'tail'}
-              >
-                {item?.location_context_instance?.vehicle_number}
-              </Text>
-            </View>
-          </>
-        )}
-
-        <View style={styles.contentsContainer}>
-          <Text
-            variant="bodyMedium"
-            style={{ color: BRAND_COLORS.textSecondary, fontWeight: 'bold' }}
-          >
-            작업자
-          </Text>
-          <Text
-            variant="bodyMedium"
-            style={{ color: 'black', fontWeight: 'bold' }}
-          >
-            {item?.user_first_name} ({item?.user})
-          </Text>
-        </View>
-        <View style={styles.contentsContainer}>
-          <Text
-            variant="bodyMedium"
-            style={{ color: BRAND_COLORS.textSecondary, fontWeight: 'bold' }}
-          >
-            소속
-          </Text>
-          <Text
-            variant="bodyMedium"
-            style={{ color: 'black', fontWeight: 'bold' }}
-          >
-            {item?.user_region} ・ {item?.user_team}
-          </Text>
-        </View>
-
-        <View style={styles.movementContainer}>
-          <Text
-            variant="bodyMedium"
-            style={{ color: BRAND_COLORS.textSecondary, fontWeight: 'bold' }}
-          >
-            이동유형(상태)
-          </Text>
-          <Text
-            variant="bodyMedium"
-            style={{ color: 'black', fontWeight: 'bold' }}
-          >
-            {item?.unit_movement} ({item?.unit_state})
-          </Text>
-        </View>
-        <Text
-          variant="bodyMedium"
-          style={{ color: BRAND_COLORS.textSecondary, fontWeight: 'bold' }}
-        >
-          이동사유
-        </Text>
-        {item.unit_movement_desc !== '' || item.state_desc !== '' ? (
-          <View style={styles.descriptionContainer}>
-            {item.state_desc !== '' ? (
-              <Text
-                variant="bodyMedium"
-                numberOfLines={1}
-                ellipsizeMode={'tail'}
-                style={{ color: 'black' }}
-              >
-                {item.state_desc}
-              </Text>
-            ) : null}
-            {item.unit_movement_desc !== '' ? (
-              <Text
-                variant="bodyMedium"
-                numberOfLines={1}
-                ellipsizeMode={'tail'}
-                style={{ color: 'black' }}
-              >
-                {item.unit_movement_desc}
-              </Text>
-            ) : null}
+        
+        <View style={styles.contentContainer}>
+          <View style={styles.headerRow}>
+            <MaterialCommunityIcons
+              name="clock-outline"
+              size={scale(16)}
+              color={COLORS.primary}
+              style={styles.clockIcon}
+            />
+            <Text style={styles.dateText}>{formattedData}</Text>
           </View>
-        ) : null}
+
+          <View style={styles.locationSection}>
+            <View style={styles.locationTypeRow}>
+              <MaterialCommunityIcons
+                name="map-marker"
+                size={scale(14)}
+                color={COLORS.primary}
+                style={styles.locationIcon}
+              />
+              <Text style={styles.locationTypeText}>{item?.location}</Text>
+            </View>
+            
+            {item?.location === '국소' && (
+              <View style={styles.locationDetails}>
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>통시코드</Text>
+                  <Text style={styles.detailValue}>
+                    {item?.location_context_instance?.zp_code}
+                  </Text>
+                </View>
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>국소명</Text>
+                  <Text style={[styles.detailValue, styles.locationName]} numberOfLines={2}>
+                    {item?.location_context_instance?.zp_name}
+                  </Text>
+                </View>
+              </View>
+            )}
+
+            {item.location === '창고' && (
+              <View style={styles.locationDetails}>
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>통시코드</Text>
+                  <Text style={styles.detailValue}>
+                    {item?.location_context_instance?.zp_code}
+                  </Text>
+                </View>
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>창고명</Text>
+                  <Text style={[styles.detailValue, styles.locationName]} numberOfLines={2}>
+                    {item?.location_context_instance?.warehouse_name}
+                  </Text>
+                </View>
+              </View>
+            )}
+
+            {item.location === '전진배치(집/중/통)' && (
+              <View style={styles.locationDetails}>
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>통시코드</Text>
+                  <Text style={styles.detailValue}>
+                    {item?.location_context_instance?.zp_code}
+                  </Text>
+                </View>
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>기지국명</Text>
+                  <Text style={[styles.detailValue, styles.locationName]} numberOfLines={2}>
+                    {item?.location_context_instance?.zp_name}
+                  </Text>
+                </View>
+              </View>
+            )}
+
+            {item.location === '차량보관' && (
+              <View style={styles.locationDetails}>
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>관리부서</Text>
+                  <Text style={styles.detailValue}>
+                    {item?.location_context_instance?.vehicle_manage_team}
+                  </Text>
+                </View>
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>차량번호</Text>
+                  <Text style={[styles.detailValue, styles.locationName]} numberOfLines={1}>
+                    {item?.location_context_instance?.vehicle_number}
+                  </Text>
+                </View>
+              </View>
+            )}
+          </View>
+
+          <View style={styles.userSection}>
+            <View style={styles.userRow}>
+              <MaterialCommunityIcons
+                name="account"
+                size={scale(14)}
+                color={COLORS.textSecondary}
+                style={styles.userIcon}
+              />
+              <Text style={styles.userText}>
+                {item?.user_first_name} ({item?.user})
+              </Text>
+              <Text style={styles.teamBadge}>
+                {item?.user_region} · {item?.user_team}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.statusSection}>
+            <View style={styles.statusRow}>
+              <MaterialCommunityIcons
+                name="swap-horizontal"
+                size={scale(14)}
+                color={COLORS.primary}
+                style={styles.statusIcon}
+              />
+              <Text style={styles.statusText}>
+                {item?.unit_movement}
+              </Text>
+              <Text style={styles.stateText}>
+                ({item?.unit_state})
+              </Text>
+            </View>
+            
+            {(item.unit_movement_desc !== '' || item.state_desc !== '') && (
+              <View style={styles.reasonSection}>
+                <Text style={styles.reasonTitle}>이동사유</Text>
+                <View style={styles.reasonBox}>
+                  {item.state_desc !== '' && (
+                    <Text style={styles.reasonText} numberOfLines={3}>
+                      {item.state_desc}
+                    </Text>
+                  )}
+                  {item.unit_movement_desc !== '' && (
+                    <Text style={styles.reasonText} numberOfLines={3}>
+                      {item.unit_movement_desc}
+                    </Text>
+                  )}
+                </View>
+              </View>
+            )}
+          </View>
+        </View>
       </View>
     );
   };
@@ -454,10 +337,9 @@ export const UnitHistory = ({ result }: UnitHistoryProps) => {
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={BRAND_COLORS.primary} />
-        <Text variant="bodyMedium" style={styles.loadingText}>
-          이력 정보를 불러오는 중...
-        </Text>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+        <Text style={styles.loadingText}>이력 정보를 불러오는 중...</Text>
+        <Text style={styles.loadingSubtext}>잠시만 기다려 주세요</Text>
       </View>
     );
   }
@@ -465,66 +347,97 @@ export const UnitHistory = ({ result }: UnitHistoryProps) => {
   if (error) {
     return (
       <View style={styles.errorContainer}>
-        <Text variant="bodyMedium" style={styles.errorText}>
-          이력 정보를 불러올 수 없습니다.
-        </Text>
+        <MaterialCommunityIcons
+          name="wifi-off"
+          size={scale(48)}
+          color={COLORS.textTertiary}
+          style={styles.errorIcon}
+        />
+        <Text style={styles.errorTitle}>이력 정보를 불러올 수 없습니다</Text>
+        <Text style={styles.errorSubtext}>네트워크 연결을 확인해 주세요</Text>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      {/* Full History Section */}
-      <View style={styles.historyContainer}>
-        <View style={styles.sectionHeader}>
-          <Text variant="titleMedium">전체 이력</Text>
-        </View>
+      <View style={styles.headerSection}>
+        <MaterialCommunityIcons
+          name="history"
+          size={scale(18)}
+          color={COLORS.primary}
+          style={styles.headerIcon}
+        />
+        <Text style={styles.headerTitle}>이력 정보</Text>
+        <Text style={styles.headerSubtitle}>
+          총 {data?.pages[0]?.count || 0}개의 이력이 있습니다
+        </Text>
+      </View>
 
-        <View>
-          {allHistoryItems.length > 0 ? (
-            <FlatList
-              showsVerticalScrollIndicator={false}
-              data={allHistoryItems}
-              keyExtractor={(item, index) => `${item.id}_${index}`}
-              renderItem={renderHistoryItem}
-              contentContainerStyle={styles.listContent}
-              removeClippedSubviews={false}
-              onEndReached={handleLoadMore}
-              onEndReachedThreshold={0.3}
-              ListFooterComponent={
-                !hasNextPage ? (
-                  <Text variant="bodyMedium" style={styles.noMoreDataText}>
-                    더이상 불러올 데이터가 없습니다.
-                  </Text>
-                ) : isFetchingNextPage ? (
-                  <ActivityIndicator
-                    size="large"
-                    color={BRAND_COLORS.primary}
-                    style={styles.footerLoader}
+      <View style={styles.historyContainer}>
+        {allHistoryItems.length > 0 ? (
+          <FlatList
+            showsVerticalScrollIndicator={false}
+            data={allHistoryItems}
+            keyExtractor={(item, index) => `${item.id}_${index}`}
+            renderItem={({ item, index }) => renderHistoryItem({ item, index })}
+            contentContainerStyle={styles.listContent}
+            removeClippedSubviews={false}
+            onEndReached={handleLoadMore}
+            onEndReachedThreshold={0.3}
+            ListFooterComponent={
+              !hasNextPage ? (
+                <View style={styles.endContainer}>
+                  <MaterialCommunityIcons
+                    name="check-circle"
+                    size={scale(20)}
+                    color={COLORS.success}
+                    style={styles.endIcon}
                   />
-                ) : null
-              }
+                  <Text style={styles.endText}>
+                    모든 이력을 확인했습니다
+                  </Text>
+                </View>
+              ) : isFetchingNextPage ? (
+                <View style={styles.loadMoreContainer}>
+                  <ActivityIndicator
+                    size="small"
+                    color={COLORS.primary}
+                  />
+                  <Text style={styles.loadMoreText}>더 불러오는 중...</Text>
+                </View>
+              ) : null
+            }
+          />
+        ) : (
+          <View style={styles.noDataContainer}>
+            <MaterialCommunityIcons
+              name="clock-outline"
+              size={scale(48)}
+              color={COLORS.textTertiary}
+              style={styles.noDataIcon}
             />
-          ) : (
-            <View style={styles.noDataContainer}>
-              <Text variant="bodyMedium" style={styles.noDataText}>
-                이력 정보가 없습니다.
-              </Text>
-            </View>
-          )}
-        </View>
+            <Text style={styles.noDataTitle}>이력 정보가 없습니다</Text>
+            <Text style={styles.noDataSubtext}>
+              아직 등록된 이력이 없어요
+            </Text>
+          </View>
+        )}
       </View>
 
       <Snackbar
         visible={snackbarVisible}
         onDismiss={() => setSnackbarVisible(false)}
         duration={3000}
+        style={styles.snackbar}
+        theme={{ colors: { primary: COLORS.primary } }}
         action={{
           label: '확인',
+          labelStyle: { color: COLORS.primary },
           onPress: () => setSnackbarVisible(false),
         }}
       >
-        {snackbarMessage}
+        <Text style={styles.snackbarText}>{snackbarMessage}</Text>
       </Snackbar>
     </View>
   );
@@ -533,90 +446,294 @@ export const UnitHistory = ({ result }: UnitHistoryProps) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingBottom: verticalScale(24),
+    backgroundColor: COLORS.surface,
   },
-  sectionHeader: {
-    padding: scale(4),
-  },
-  customCard: {
-    backgroundColor: '#F0F0F0',
-    padding: scale(16),
-    marginBottom: verticalScale(8),
-    borderRadius: 10,
-  },
-  dateContainer: {
-    flexDirection: 'row',
+  headerSection: {
+    backgroundColor: COLORS.background,
+    paddingHorizontal: scale(20),
+    paddingVertical: verticalScale(16),
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
     alignItems: 'center',
-    justifyContent: 'flex-end',
-    marginVertical: verticalScale(4),
+  },
+  headerIcon: {
+    marginBottom: verticalScale(8),
+  },
+  headerTitle: {
+    fontSize: scale(16),
+    fontWeight: '700',
+    color: COLORS.text,
+    marginBottom: verticalScale(4),
+  },
+  headerSubtitle: {
+    fontSize: scale(13),
+    color: COLORS.textSecondary,
   },
   historyContainer: {
     flex: 1,
-    marginTop: verticalScale(8),
+    paddingHorizontal: scale(16),
   },
   listContent: {
-    flexGrow: 1,
-    paddingBottom: verticalScale(8),
+    paddingTop: verticalScale(16),
+    paddingBottom: verticalScale(20),
   },
-  contentsContainer: {
+  historyItem: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginVertical: verticalScale(4),
+    marginBottom: verticalScale(20),
   },
-  locationNameContainer: {
-    flexDirection: 'row',
+  timelineContainer: {
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: verticalScale(16),
+    marginRight: scale(16),
+    paddingTop: verticalScale(6),
   },
-  movementContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  timelineDot: {
+    width: scale(10),
+    height: scale(10),
+    borderRadius: scale(5),
+    backgroundColor: COLORS.primary,
+    zIndex: 1,
+  },
+  timelineLine: {
+    position: 'absolute',
+    top: scale(10),
+    width: 2,
+    height: '100%',
+    backgroundColor: COLORS.border,
     marginTop: verticalScale(8),
-    marginBottom: verticalScale(4),
   },
-  descriptionContainer: {
-    paddingHorizontal: scale(16),
-    paddingVertical: verticalScale(8),
-    marginVertical: verticalScale(4),
-    borderRadius: 10,
+  contentContainer: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+    borderRadius: scale(12),
+    padding: scale(16),
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: verticalScale(12),
+  },
+  clockIcon: {
+    marginRight: scale(6),
+  },
+  dateText: {
+    fontSize: scale(13),
+    fontWeight: '600',
+    color: COLORS.primary,
+  },
+  locationSection: {
+    marginBottom: verticalScale(12),
+  },
+  locationTypeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: verticalScale(8),
+  },
+  locationIcon: {
+    marginRight: scale(6),
+  },
+  locationTypeText: {
+    fontSize: scale(14),
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  locationDetails: {
+    backgroundColor: COLORS.surface,
+    borderRadius: scale(8),
+    padding: scale(12),
+  },
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: verticalScale(6),
+  },
+  detailLabel: {
+    fontSize: scale(12),
+    fontWeight: '500',
+    color: COLORS.textSecondary,
+    flex: 0.3,
+  },
+  detailValue: {
+    fontSize: scale(12),
+    fontWeight: '600',
+    color: COLORS.text,
+    flex: 0.7,
+    textAlign: 'right',
+  },
+  locationName: {
+    lineHeight: scale(16),
+  },
+  userSection: {
+    marginBottom: verticalScale(12),
+  },
+  userRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  userIcon: {
+    marginRight: scale(6),
+  },
+  userText: {
+    fontSize: scale(13),
+    fontWeight: '500',
+    color: COLORS.text,
+    flex: 1,
+  },
+  teamBadge: {
+    fontSize: scale(11),
+    fontWeight: '500',
+    color: COLORS.textSecondary,
+    backgroundColor: COLORS.surface,
+    paddingHorizontal: scale(8),
+    paddingVertical: verticalScale(2),
+    borderRadius: scale(10),
+  },
+  statusSection: {
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+    paddingTop: verticalScale(12),
+  },
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: verticalScale(8),
+  },
+  statusIcon: {
+    marginRight: scale(6),
+  },
+  statusText: {
+    fontSize: scale(14),
+    fontWeight: '700',
+    color: COLORS.primary,
+    marginRight: scale(6),
+  },
+  stateText: {
+    fontSize: scale(12),
+    fontWeight: '500',
+    color: COLORS.textSecondary,
+  },
+  reasonSection: {
+    marginTop: verticalScale(8),
+  },
+  reasonTitle: {
+    fontSize: scale(12),
+    fontWeight: '600',
+    color: COLORS.textSecondary,
+    marginBottom: verticalScale(6),
+  },
+  reasonBox: {
+    backgroundColor: COLORS.primaryLight,
+    borderLeftWidth: 3,
+    borderLeftColor: COLORS.primary,
+    borderRadius: scale(6),
+    padding: scale(10),
+  },
+  reasonText: {
+    fontSize: scale(12),
+    fontWeight: '500',
+    color: COLORS.text,
+    lineHeight: scale(16),
+    marginBottom: verticalScale(2),
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: verticalScale(32),
+    paddingVertical: verticalScale(40),
   },
   loadingText: {
-    marginTop: verticalScale(8),
-    color: BRAND_COLORS.textSecondary,
+    marginTop: verticalScale(16),
+    fontSize: scale(16),
+    fontWeight: '600',
+    color: COLORS.textSecondary,
+  },
+  loadingSubtext: {
+    marginTop: verticalScale(4),
+    fontSize: scale(13),
+    color: COLORS.textTertiary,
   },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: verticalScale(32),
+    paddingVertical: verticalScale(40),
+    paddingHorizontal: scale(32),
   },
-  errorText: {
-    color: BRAND_COLORS.textSecondary,
+  errorIcon: {
+    marginBottom: verticalScale(16),
+  },
+  errorTitle: {
+    fontSize: scale(18),
+    fontWeight: '600',
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    marginBottom: verticalScale(8),
+  },
+  errorSubtext: {
+    fontSize: scale(14),
+    color: COLORS.textTertiary,
     textAlign: 'center',
   },
   noDataContainer: {
-    paddingVertical: verticalScale(32),
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
+    paddingVertical: verticalScale(60),
+    paddingHorizontal: scale(32),
   },
-  noDataText: {
-    color: BRAND_COLORS.textSecondary,
+  noDataIcon: {
+    marginBottom: verticalScale(20),
+  },
+  noDataTitle: {
+    fontSize: scale(18),
+    fontWeight: '600',
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    marginBottom: verticalScale(8),
+  },
+  noDataSubtext: {
+    fontSize: scale(14),
+    color: COLORS.textTertiary,
     textAlign: 'center',
   },
-  noMoreDataText: {
-    textAlign: 'center',
-    color: BRAND_COLORS.textSecondary,
+  endContainer: {
+    alignItems: 'center',
+    paddingVertical: verticalScale(24),
+  },
+  endIcon: {
+    marginBottom: verticalScale(8),
+  },
+  endText: {
+    fontSize: scale(14),
+    fontWeight: '600',
+    color: COLORS.success,
+  },
+  loadMoreContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: verticalScale(16),
   },
-  footerLoader: {
-    marginVertical: verticalScale(16),
+  loadMoreText: {
+    marginLeft: scale(8),
+    fontSize: scale(14),
+    color: COLORS.textSecondary,
+  },
+  snackbar: {
+    backgroundColor: COLORS.text,
+    marginBottom: verticalScale(20),
+    borderRadius: scale(8),
+  },
+  snackbarText: {
+    color: COLORS.background,
+    fontWeight: '500',
   },
 });

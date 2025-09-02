@@ -1,15 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, TouchableOpacity, View, ScrollView } from 'react-native';
 import { useNavigation, RouteProp } from '@react-navigation/native';
-import { 
-  Text, 
-  List, 
-  TextInput, 
-  Switch, 
-  Button, 
-  Surface, 
+import {
+  Text,
+  TextInput,
+  Switch,
+  Button,
+  Surface,
   Appbar,
-  Snackbar 
+  Snackbar,
 } from 'react-native-paper';
 import { scale, verticalScale } from 'react-native-size-matters';
 import Icon from 'react-native-vector-icons/MaterialIcons';
@@ -18,13 +17,17 @@ import { api } from '../../services/api/api';
 import { SearchLocationModal } from '../../components/Search/SearchLocationModal';
 import type { HomeStackParamList } from '../../navigation/RootStackNavigation';
 
-// Brand Colors
-const BRAND_COLORS = {
+// KakaoTalk-style colors
+const COLORS = {
   primary: '#F47725',
-  background: '#FCFCFC',
-  surface: '#FFFFFF',
+  primaryLight: 'rgba(244, 119, 37, 0.1)',
+  background: '#FFFFFF',
+  surface: '#F9F9F9',
+  text: '#000000',
   textSecondary: '#666666',
-  light: 'rgba(244, 119, 37, 0.1)',
+  textTertiary: '#999999',
+  border: '#E0E0E0',
+  divider: '#F0F0F0',
 };
 
 type UseUnitScreenRouteProp = RouteProp<HomeStackParamList, 'UseUnitScreen'>;
@@ -76,7 +79,9 @@ export const UseUnitScreen: React.FC<UseUnitProps> = ({ route }) => {
   // Find initial action type or default to first one
   const getInitialActionType = () => {
     if (initialActionType) {
-      const foundType = actionTypes.find(type => type.value === initialActionType);
+      const foundType = actionTypes.find(
+        type => type.value === initialActionType,
+      );
       return foundType || actionTypes[0];
     }
     return actionTypes[0];
@@ -88,21 +93,42 @@ export const UseUnitScreen: React.FC<UseUnitProps> = ({ route }) => {
 
   // Common states
   const [unitSerial, setUnitSerial] = useState(result?.unit_serial || '');
-  const [selectedUnitState, setSelectedUnitState] = useState({ label: '', value: '' });
+  const [selectedUnitState, setSelectedUnitState] = useState({
+    label: '',
+    value: '',
+  });
   const [stateDesc, setStateDesc] = useState('');
   const [movementDesc, setMovementDesc] = useState('');
 
   // Location states
-  const [selectedLocation, setSelectedLocation] = useState({ label: '', value: '', id: '' });
-  const [searchLocation, setSearchLocation] = useState({ label: '', value: '' });
+  const [selectedLocation, setSelectedLocation] = useState({
+    label: '',
+    value: '',
+    id: '',
+  });
+  const [searchLocation, setSearchLocation] = useState({
+    label: '',
+    value: '',
+  });
 
   // Repair specific states
-  const [selectedCompany, setSelectedCompany] = useState({ label: '', value: '' });
-  const [selectedVendor, setSelectedVendor] = useState({ label: '', value: '' });
-  const [selectedDelivery, setSelectedDelivery] = useState({ label: '', value: '' });
+  const [selectedCompany, setSelectedCompany] = useState({
+    label: '',
+    value: '',
+  });
+  const [selectedVendor, setSelectedVendor] = useState({
+    label: '',
+    value: '',
+  });
+  const [selectedDelivery, setSelectedDelivery] = useState({
+    label: '',
+    value: '',
+  });
   const [deliveryDesc, setDeliveryDesc] = useState('');
   const [repairDesc, setRepairDesc] = useState('');
-  const [isRequiredTestBed, setIsRequiredTestBed] = useState(result?.is_required_testbed || false);
+  const [isRequiredTestBed, setIsRequiredTestBed] = useState(
+    result?.is_required_testbed || false,
+  );
   const [isPreLentalReturn, setIsPreLentalReturn] = useState(false);
 
   // UI states
@@ -149,7 +175,10 @@ export const UseUnitScreen: React.FC<UseUnitProps> = ({ route }) => {
         showSnackbar('유니트 상태를 선택해주세요.');
         return;
       }
-      if (['불량', '수리불가(불용)'].includes(selectedUnitState.label) && stateDesc.length < 3) {
+      if (
+        ['불량', '수리불가(불용)'].includes(selectedUnitState.label) &&
+        stateDesc.length < 3
+      ) {
         showSnackbar('사유를 2글자 이상 입력해주세요.');
         return;
       }
@@ -160,7 +189,10 @@ export const UseUnitScreen: React.FC<UseUnitProps> = ({ route }) => {
         showSnackbar('세부 위치를 선택해주세요.');
         return;
       }
-      if (['전진배치(집/중/통)', '차량보관'].includes(selectedLocation.label) && movementDesc.length < 3) {
+      if (
+        ['전진배치(집/중/통)', '차량보관'].includes(selectedLocation.label) &&
+        movementDesc.length < 3
+      ) {
         showSnackbar('사유를 2글자 이상 입력해주세요.');
         return;
       }
@@ -171,7 +203,10 @@ export const UseUnitScreen: React.FC<UseUnitProps> = ({ route }) => {
         showSnackbar('유니트 상태를 선택해주세요.');
         return;
       }
-      if (['불량', '수리불가(불용)'].includes(selectedUnitState.label) && stateDesc.length < 4) {
+      if (
+        ['불량', '수리불가(불용)'].includes(selectedUnitState.label) &&
+        stateDesc.length < 4
+      ) {
         showSnackbar('사유를 3글자 이상 입력해주세요.');
         return;
       }
@@ -193,9 +228,12 @@ export const UseUnitScreen: React.FC<UseUnitProps> = ({ route }) => {
     // Update serial number if changed
     if (unitSerial !== result?.unit_serial) {
       try {
-        await api.put(`/apps/unit_object_info/update_serial_number/${instance}/`, {
-          unit_serial: unitSerial,
-        });
+        await api.put(
+          `/apps/unit_object_info/update_serial_number/${instance}/`,
+          {
+            unit_serial: unitSerial,
+          },
+        );
       } catch (error) {
         console.log('Serial update error:', error);
       }
@@ -224,7 +262,8 @@ export const UseUnitScreen: React.FC<UseUnitProps> = ({ route }) => {
           unit_movement: '창고출고',
           state: result?.last_manage_history?.unit_state,
           state_desc: result?.last_manage_history?.state_desc,
-          movement_desc: movementDesc || result?.last_manage_history?.movement_desc,
+          movement_desc:
+            movementDesc || result?.last_manage_history?.movement_desc,
         };
         successMessage = '출고 성공';
         break;
@@ -257,7 +296,11 @@ export const UseUnitScreen: React.FC<UseUnitProps> = ({ route }) => {
           location_context_instance: selectedVendor.value,
           unit_movement: '수리출고',
           state: result?.last_manage_history?.unit_state,
-          movement_desc: `${isRequiredTestBed ? '[T/B 요청] ' : ''}${isPreLentalReturn ? '[선임대 반납] ' : ''}[${selectedDelivery.label}${deliveryDesc.trim() ? `, ${deliveryDesc}` : ''}], ${repairDesc}`,
+          movement_desc: `${isRequiredTestBed ? '[T/B 요청] ' : ''}${
+            isPreLentalReturn ? '[선임대 반납] ' : ''
+          }[${selectedDelivery.label}${
+            deliveryDesc.trim() ? `, ${deliveryDesc}` : ''
+          }], ${repairDesc}`,
         };
         successMessage = '수리출고 요청 성공';
         break;
@@ -294,35 +337,44 @@ export const UseUnitScreen: React.FC<UseUnitProps> = ({ route }) => {
     location =>
       location.location !== '현장대기' &&
       location.location !== '창고' &&
-      location.location !== '차량보관'
+      location.location !== '차량보관',
   );
 
   useEffect(() => {
-    if (selectedUnitState.value !== '정상' && result?.last_manage_history?.state_desc) {
+    if (
+      selectedUnitState.value !== '정상' &&
+      result?.last_manage_history?.state_desc
+    ) {
       setStateDesc(result.last_manage_history.state_desc);
     }
   }, [selectedUnitState, result]);
 
   useEffect(() => {
-    if (selectedActionType.value === 'repair_release' && result?.last_manage_history?.unit_state !== '정상') {
+    if (
+      selectedActionType.value === 'repair_release' &&
+      result?.last_manage_history?.unit_state !== '정상'
+    ) {
       setRepairDesc(result?.last_manage_history?.state_desc || '');
     }
   }, [selectedActionType, result]);
 
   return (
     <Surface style={styles.container}>
-      <Appbar.Header>
-        <Appbar.BackAction onPress={() => navigation.goBack()} />
-        <Appbar.Content title={`유니트 ${selectedActionType.label}`} />
+      <Appbar.Header style={styles.appbar}>
+        <Appbar.BackAction
+          onPress={() => navigation.goBack()}
+          iconColor={COLORS.text}
+        />
+        <Appbar.Content
+          title={`유니트 ${selectedActionType.label}`}
+          titleStyle={styles.appbarTitle}
+        />
       </Appbar.Header>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-
         {/* Action Title */}
         <View style={styles.section}>
-          <Text variant="titleLarge" style={styles.actionTitle}>
-            {getActionTitle()}
-          </Text>
+          <Text style={styles.actionTitle}>{getActionTitle()}</Text>
         </View>
 
         {/* Serial Number Input (for incoming) */}
@@ -335,6 +387,7 @@ export const UseUnitScreen: React.FC<UseUnitProps> = ({ route }) => {
               onChangeText={setUnitSerial}
               mode="outlined"
               style={styles.textInput}
+              textColor={COLORS.text}
             />
           </View>
         )}
@@ -342,33 +395,44 @@ export const UseUnitScreen: React.FC<UseUnitProps> = ({ route }) => {
         {/* Unit State Selection (for incoming, unmounting) */}
         {['incoming', 'unmounting'].includes(selectedActionType.value) && (
           <View style={styles.section}>
-            <List.AccordionGroup
-              expandedId={expanded}
-              onAccordionPress={id => setExpanded(id === expanded ? null : id)}
-            >
-              <List.Accordion
-                title={
-                  <Text variant="titleMedium" style={{ fontWeight: 'bold', color: 'black' }}>
-                    {selectedUnitState.label || '유니트 상태'}
-                  </Text>
+            <View style={styles.dropdownSection}>
+              <Text style={styles.label}>유니트 상태</Text>
+              <TouchableOpacity
+                style={styles.dropdown}
+                onPress={() =>
+                  setExpanded(expanded === 'unitState' ? null : 'unitState')
                 }
-                theme={{ colors: { background: 'transparent' } }}
-                id="unitState"
-                style={styles.accordion}
               >
-                {unitStatusList.map((state, index) => (
-                  <List.Item
-                    key={index}
-                    title={
-                      <Text variant="titleMedium" style={{ fontWeight: 'bold' }}>
+                <Text style={styles.dropdownText}>
+                  {selectedUnitState.label || '유니트 상태를 선택해주세요'}
+                </Text>
+                <Text style={styles.dropdownIcon}>
+                  {expanded === 'unitState' ? '▲' : '▼'}
+                </Text>
+              </TouchableOpacity>
+
+              {expanded === 'unitState' && (
+                <View style={styles.dropdownOptions}>
+                  {unitStatusList.map((state, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      style={[
+                        styles.dropdownOption,
+                        index === unitStatusList.length - 1 &&
+                          styles.dropdownOptionLast,
+                      ]}
+                      onPress={() =>
+                        handleSelectUnitState(state.id, state.state)
+                      }
+                    >
+                      <Text style={styles.dropdownOptionText}>
                         {state.state}
                       </Text>
-                    }
-                    onPress={() => handleSelectUnitState(state.id, state.state)}
-                  />
-                ))}
-              </List.Accordion>
-            </List.AccordionGroup>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </View>
 
             {['불량', '수리불가(불용)'].includes(selectedUnitState.label) && (
               <TextInput
@@ -382,6 +446,7 @@ export const UseUnitScreen: React.FC<UseUnitProps> = ({ route }) => {
                 mode="outlined"
                 multiline
                 style={styles.textInput}
+                textColor={COLORS.text}
               />
             )}
           </View>
@@ -390,33 +455,44 @@ export const UseUnitScreen: React.FC<UseUnitProps> = ({ route }) => {
         {/* Location Selection (for mounting) */}
         {selectedActionType.value === 'mounting' && (
           <View style={styles.section}>
-            <List.AccordionGroup
-              expandedId={expanded}
-              onAccordionPress={id => setExpanded(id === expanded ? null : id)}
-            >
-              <List.Accordion
-                title={
-                  <Text variant="titleMedium" style={{ fontWeight: 'bold', color: 'black' }}>
-                    {selectedLocation.label || '장착 위치'}
-                  </Text>
+            <View style={styles.dropdownSection}>
+              <Text style={styles.label}>장착 위치</Text>
+              <TouchableOpacity
+                style={styles.dropdown}
+                onPress={() =>
+                  setExpanded(expanded === 'location' ? null : 'location')
                 }
-                theme={{ colors: { background: 'transparent' } }}
-                id="location"
-                style={styles.accordion}
               >
-                {filteredLocationList.map((location, index) => (
-                  <List.Item
-                    key={index}
-                    title={
-                      <Text variant="titleMedium" style={{ fontWeight: 'bold' }}>
+                <Text style={styles.dropdownText}>
+                  {selectedLocation.label || '장착 위치를 선택해주세요'}
+                </Text>
+                <Text style={styles.dropdownIcon}>
+                  {expanded === 'location' ? '▲' : '▼'}
+                </Text>
+              </TouchableOpacity>
+
+              {expanded === 'location' && (
+                <View style={styles.dropdownOptions}>
+                  {filteredLocationList.map((location, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      style={[
+                        styles.dropdownOption,
+                        index === filteredLocationList.length - 1 &&
+                          styles.dropdownOptionLast,
+                      ]}
+                      onPress={() =>
+                        handleSelectLocation(location.id, location.location)
+                      }
+                    >
+                      <Text style={styles.dropdownOptionText}>
                         {location.location}
                       </Text>
-                    }
-                    onPress={() => handleSelectLocation(location.id, location.location)}
-                  />
-                ))}
-              </List.Accordion>
-            </List.AccordionGroup>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </View>
 
             {/* Search Location Button */}
             <TouchableOpacity
@@ -425,25 +501,35 @@ export const UseUnitScreen: React.FC<UseUnitProps> = ({ route }) => {
             >
               {searchLocation.label === '' ? (
                 <View style={styles.searchLocationContent}>
-                  <Icon name="search" size={20} style={styles.searchIcon} />
-                  <Text>세부 위치 검색</Text>
+                  <Icon
+                    name="search"
+                    size={scale(20)}
+                    color={COLORS.textSecondary}
+                    style={styles.searchIcon}
+                  />
+                  <Text style={styles.searchLocationText}>세부 위치 검색</Text>
                 </View>
               ) : (
                 <View style={styles.selectedLocationContent}>
                   <Text
-                    variant="titleMedium"
                     style={styles.selectedLocationText}
                     numberOfLines={1}
                     ellipsizeMode="tail"
                   >
                     {searchLocation.label}
                   </Text>
-                  <Icon name="refresh" color="grey" size={20} />
+                  <Icon
+                    name="refresh"
+                    color={COLORS.textSecondary}
+                    size={scale(20)}
+                  />
                 </View>
               )}
             </TouchableOpacity>
 
-            {['전진배치(집/중/통)', '차량보관'].includes(selectedLocation.label) && (
+            {['전진배치(집/중/통)', '차량보관'].includes(
+              selectedLocation.label,
+            ) && (
               <TextInput
                 value={movementDesc}
                 onChangeText={setMovementDesc}
@@ -455,6 +541,7 @@ export const UseUnitScreen: React.FC<UseUnitProps> = ({ route }) => {
                 mode="outlined"
                 multiline
                 style={styles.textInput}
+                textColor={COLORS.text}
               />
             )}
           </View>
@@ -470,6 +557,7 @@ export const UseUnitScreen: React.FC<UseUnitProps> = ({ route }) => {
               mode="outlined"
               multiline
               style={styles.textInput}
+              textColor={COLORS.text}
             />
           </View>
         )}
@@ -482,11 +570,14 @@ export const UseUnitScreen: React.FC<UseUnitProps> = ({ route }) => {
               <Text variant="titleMedium" style={styles.label}>
                 수리업체 (Mock)
               </Text>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.mockVendorButton}
                 onPress={() => {
                   setSelectedCompany({ label: 'SKO', value: 'sko' });
-                  setSelectedVendor({ label: 'SKO 수리센터', value: 'sko_repair' });
+                  setSelectedVendor({
+                    label: 'SKO 수리센터',
+                    value: 'sko_repair',
+                  });
                 }}
               >
                 <Text variant="titleMedium">
@@ -504,58 +595,76 @@ export const UseUnitScreen: React.FC<UseUnitProps> = ({ route }) => {
                 <Switch
                   value={isRequiredTestBed}
                   onValueChange={setIsRequiredTestBed}
-                  color={BRAND_COLORS.primary}
+                  color={COLORS.primary}
                 />
               </View>
               <View style={styles.switchItem}>
-                <Text variant="titleMedium" style={styles.switchLabel}>
-                  선임대 반납
-                </Text>
+                <Text style={styles.switchLabel}>선임대 반납</Text>
                 <Switch
                   value={isPreLentalReturn}
                   onValueChange={setIsPreLentalReturn}
-                  color={BRAND_COLORS.primary}
+                  thumbColor={
+                    isPreLentalReturn ? COLORS.primary : COLORS.background
+                  }
+                  trackColor={{
+                    false: COLORS.border,
+                    true: COLORS.primaryLight,
+                  }}
                 />
               </View>
             </View>
 
             {/* Delivery Type Selection */}
             <View style={styles.section}>
-              <List.AccordionGroup
-                expandedId={expanded}
-                onAccordionPress={id => setExpanded(id === expanded ? null : id)}
-              >
-                <List.Accordion
-                  title={
-                    <Text variant="titleMedium" style={{ fontWeight: 'bold', color: 'black' }}>
-                      {selectedDelivery.label || '배송방법'}
-                    </Text>
+              <View style={styles.dropdownSection}>
+                <Text style={styles.label}>배송방법</Text>
+                <TouchableOpacity
+                  style={styles.dropdown}
+                  onPress={() =>
+                    setExpanded(expanded === 'delivery' ? null : 'delivery')
                   }
-                  theme={{ colors: { background: 'transparent' } }}
-                  id="delivery"
-                  style={styles.accordion}
                 >
-                  {repairDeliveryType.map((delivery, index) => (
-                    <List.Item
-                      key={index}
-                      title={
-                        <Text variant="titleMedium" style={{ fontWeight: 'bold' }}>
+                  <Text style={styles.dropdownText}>
+                    {selectedDelivery.label || '배송방법을 선택해주세요'}
+                  </Text>
+                  <Text style={styles.dropdownIcon}>
+                    {expanded === 'delivery' ? '▲' : '▼'}
+                  </Text>
+                </TouchableOpacity>
+
+                {expanded === 'delivery' && (
+                  <View style={styles.dropdownOptions}>
+                    {repairDeliveryType.map((delivery, index) => (
+                      <TouchableOpacity
+                        key={index}
+                        style={[
+                          styles.dropdownOption,
+                          index === repairDeliveryType.length - 1 &&
+                            styles.dropdownOptionLast,
+                        ]}
+                        onPress={() =>
+                          handleSelectDelivery(delivery.value, delivery.label)
+                        }
+                      >
+                        <Text style={styles.dropdownOptionText}>
                           {delivery.label}
                         </Text>
-                      }
-                      onPress={() => handleSelectDelivery(delivery.value, delivery.label)}
-                    />
-                  ))}
-                </List.Accordion>
-              </List.AccordionGroup>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+              </View>
 
-              {['기타', '일반택배', '퀵', '직접전달'].includes(selectedDelivery.label) && (
+              {['기타', '일반택배', '퀵', '직접전달'].includes(
+                selectedDelivery.label,
+              ) && (
                 <TextInput
                   placeholder="송장번호 등 기타 내역을 입력해주세요."
                   value={deliveryDesc}
                   onChangeText={setDeliveryDesc}
                   mode="outlined"
                   style={styles.textInput}
+                  textColor={COLORS.text}
                 />
               )}
             </View>
@@ -571,6 +680,7 @@ export const UseUnitScreen: React.FC<UseUnitProps> = ({ route }) => {
                 multiline
                 numberOfLines={5}
                 style={styles.textInput}
+                textColor={COLORS.text}
               />
             </View>
           </>
@@ -581,7 +691,8 @@ export const UseUnitScreen: React.FC<UseUnitProps> = ({ route }) => {
           <Button
             mode="contained"
             onPress={handleSubmit}
-            style={[styles.submitButton, { backgroundColor: BRAND_COLORS.primary }]}
+            style={styles.submitButton}
+            buttonColor={COLORS.primary}
             labelStyle={styles.submitButtonText}
           >
             {selectedActionType.value === 'repair_release' ? '요청' : '확인'}
@@ -602,8 +713,15 @@ export const UseUnitScreen: React.FC<UseUnitProps> = ({ route }) => {
         visible={snackbarVisible}
         onDismiss={() => setSnackbarVisible(false)}
         duration={3000}
+        style={styles.snackbar}
+        theme={{ colors: { primary: COLORS.primary } }}
+        action={{
+          label: '확인',
+          labelStyle: { color: COLORS.primary },
+          onPress: () => setSnackbarVisible(false),
+        }}
       >
-        {snackbarMessage}
+        <Text style={styles.snackbarText}>{snackbarMessage}</Text>
       </Snackbar>
     </Surface>
   );
@@ -612,45 +730,103 @@ export const UseUnitScreen: React.FC<UseUnitProps> = ({ route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: BRAND_COLORS.background,
+    backgroundColor: COLORS.background,
+  },
+  appbar: {
+    backgroundColor: COLORS.background,
+    elevation: 0,
+    shadowOpacity: 0,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  appbarTitle: {
+    color: COLORS.text,
+    fontWeight: '800',
   },
   content: {
     flex: 1,
-    padding: scale(16),
+    backgroundColor: COLORS.surface,
+    padding: scale(20),
   },
   section: {
-    marginBottom: verticalScale(16),
+    marginBottom: verticalScale(20),
   },
   label: {
+    fontSize: scale(16),
+    fontWeight: '600',
+    color: COLORS.text,
     marginBottom: verticalScale(8),
-    color: BRAND_COLORS.textSecondary,
-    fontWeight: 'bold',
   },
   actionTitle: {
-    textAlign: 'center',
-    fontWeight: 'bold',
-    color: '#333333',
+    fontSize: scale(14),
+    // textAlign: 'center',
+    // fontWeight: '600',
+    color: COLORS.textSecondary,
+    // lineHeight: scale(24),
   },
   textInput: {
-    backgroundColor: 'white',
-    fontSize: scale(14),
+    backgroundColor: COLORS.background,
+    fontSize: scale(16),
   },
-  accordion: {
-    backgroundColor: 'white',
-    borderColor: '#000000',
-    borderWidth: 0.5,
-    borderRadius: 5,
-    marginBottom: verticalScale(8),
+  dropdownSection: {
+    marginBottom: verticalScale(12),
+  },
+  dropdown: {
+    backgroundColor: COLORS.background,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: scale(8),
+    paddingHorizontal: scale(16),
+    paddingVertical: verticalScale(12),
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  dropdownText: {
+    fontSize: scale(16),
+    color: COLORS.text,
+    flex: 1,
+  },
+  dropdownIcon: {
+    fontSize: scale(12),
+    color: COLORS.textSecondary,
+  },
+  dropdownOptions: {
+    backgroundColor: COLORS.background,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: scale(8),
+    marginTop: verticalScale(4),
+    overflow: 'hidden',
+  },
+  dropdownOption: {
+    paddingHorizontal: scale(16),
+    paddingVertical: verticalScale(12),
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  dropdownOptionLast: {
+    borderBottomWidth: 0,
+  },
+  dropdownOptionText: {
+    fontSize: scale(16),
+    color: COLORS.text,
   },
   searchLocationButton: {
-    backgroundColor: '#F0F0F0',
-    borderRadius: 10,
-    marginTop: verticalScale(8),
-    padding: scale(12),
+    backgroundColor: COLORS.background,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: scale(8),
+    marginTop: verticalScale(12),
+    padding: scale(16),
   },
   searchLocationContent: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  searchLocationText: {
+    fontSize: scale(16),
+    color: COLORS.textSecondary,
   },
   searchIcon: {
     marginRight: scale(8),
@@ -661,44 +837,61 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   selectedLocationText: {
-    fontWeight: 'bold',
-    color: 'black',
+    fontSize: scale(16),
+    fontWeight: '600',
+    color: COLORS.text,
     flex: 1,
     marginRight: scale(8),
   },
   mockVendorButton: {
-    backgroundColor: '#F0F0F0',
-    padding: scale(12),
-    borderRadius: 8,
+    backgroundColor: COLORS.background,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: COLORS.border,
+    padding: scale(16),
+    borderRadius: scale(8),
+  },
+  mockVendorText: {
+    fontSize: scale(16),
+    color: COLORS.text,
   },
   switchContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
+    backgroundColor: COLORS.background,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: scale(8),
+    paddingHorizontal: scale(20),
     paddingVertical: verticalScale(16),
-    marginBottom: verticalScale(16),
+    marginBottom: verticalScale(20),
   },
   switchItem: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    marginVertical: verticalScale(8),
   },
   switchLabel: {
-    marginRight: scale(8),
-    fontWeight: 'bold',
-    color: BRAND_COLORS.textSecondary,
+    fontSize: scale(16),
+    fontWeight: '500',
+    color: COLORS.text,
   },
   buttonContainer: {
     paddingVertical: verticalScale(16),
     paddingBottom: verticalScale(32),
   },
   submitButton: {
-    paddingVertical: verticalScale(8),
-    borderRadius: 8,
+    borderRadius: scale(8),
+    minHeight: verticalScale(40),
+    justifyContent: 'center',
   },
   submitButtonText: {
     fontSize: scale(16),
-    fontWeight: 'bold',
+    fontWeight: '600',
+  },
+  snackbar: {
+    backgroundColor: COLORS.text,
+    marginBottom: verticalScale(20),
+  },
+  snackbarText: {
+    color: COLORS.background,
   },
 });

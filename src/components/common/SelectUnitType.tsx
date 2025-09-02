@@ -1,8 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet } from 'react-native';
-import { List, Text } from 'react-native-paper';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { Text } from 'react-native-paper';
 import { scale, verticalScale } from 'react-native-size-matters';
 import { useSubTypes, useDetailTypes } from '../../hooks/useSelectList.ts';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+
+// KakaoTalk-style colors
+const COLORS = {
+  primary: '#F47725',
+  primaryLight: 'rgba(244, 119, 37, 0.1)',
+  background: '#FFFFFF',
+  surface: '#F9F9F9',
+  text: '#000000',
+  textSecondary: '#666666',
+  textTertiary: '#AAAAAA',
+  border: '#E0E0E0',
+  disabledBackground: '#F5F5F5',
+  disabledBorder: '#EEEEEE',
+};
 
 interface SelectUnitTypeProps {
   selectedDetailType: { key: string; value: string };
@@ -53,54 +68,83 @@ const getUniqueValues = (
 interface SelectionItemProps {
   label: string;
   value: string;
-  accordionId: string;
-  expanded: string | null;
+  expanded: boolean;
   options: Array<any>;
   onSelect: (item: any) => void;
   renderTitle?: (item: any) => string;
-  onAccordionPress: (id: string) => void;
+  onToggle: () => void;
+  disabled?: boolean;
 }
 
 const SelectionItem: React.FC<SelectionItemProps> = ({
   value,
-  accordionId,
   label,
   expanded,
   options,
   onSelect,
-  onAccordionPress,
+  onToggle,
+  disabled = false,
   renderTitle = (item: any) => item.label || item.typename || item.value,
 }) => (
   <View style={styles.selectionSection}>
-    <Text variant="labelMedium" style={styles.sectionLabel}>
-      {label}
-    </Text>
-    <List.Accordion
-      style={styles.accordionContent}
-      title={value}
-      titleStyle={styles.accordionTitle}
-      expanded={expanded === accordionId}
-      onPress={() => onAccordionPress(accordionId)}
+    <Text style={styles.sectionLabel}>{label}</Text>
+
+    <TouchableOpacity
+      style={[
+        styles.selectionHeader,
+        disabled && styles.selectionHeaderDisabled,
+        expanded && styles.selectionHeaderExpanded,
+      ]}
+      onPress={disabled ? undefined : onToggle}
+      disabled={disabled}
     >
-      {options && options.length > 0 ? (
-        options.map((item: any, index: number) => (
-          <List.Item
-            key={`${accordionId}-${index}`}
-            title={renderTitle(item)}
-            onPress={() => onSelect(item)}
-            style={styles.listItem}
-            titleStyle={styles.listItemTitle}
-          />
-        ))
-      ) : (
-        <List.Item
-          title="옵션이 없습니다"
+      <Text
+        style={[
+          styles.selectionValue,
+          disabled && styles.selectionValueDisabled,
+          !value && styles.selectionPlaceholder,
+        ]}
+        numberOfLines={1}
+      >
+        {value || '선택해주세요'}
+      </Text>
+      <MaterialIcons
+        name={expanded ? 'keyboard-arrow-up' : 'keyboard-arrow-down'}
+        size={scale(18)}
+        color={
           disabled
-          style={styles.listItem}
-          titleStyle={styles.listItemTitle}
-        />
-      )}
-    </List.Accordion>
+            ? COLORS.textTertiary
+            : expanded
+            ? COLORS.primary
+            : COLORS.textSecondary
+        }
+      />
+    </TouchableOpacity>
+
+    {expanded && (
+      <View style={styles.optionsList}>
+        {options && options.length > 0 ? (
+          options.map((item: any, index: number) => (
+            <TouchableOpacity
+              key={index}
+              style={[
+                styles.optionItem,
+                index === options.length - 1 && styles.optionItemLast,
+              ]}
+              onPress={() => onSelect(item)}
+            >
+              <Text style={styles.optionText}>{renderTitle(item)}</Text>
+            </TouchableOpacity>
+          ))
+        ) : (
+          <View style={styles.optionItem}>
+            <Text style={styles.optionTextDisabled}>
+              선택할 수 있는 옵션이 없습니다
+            </Text>
+          </View>
+        )}
+      </View>
+    )}
   </View>
 );
 
@@ -116,7 +160,7 @@ export const SelectUnitType: React.FC<SelectUnitTypeProps> = ({
 }) => {
   const { data: subTypeList } = useSubTypes();
   const { data: detailTypeList } = useDetailTypes();
-  const [unitExpanded, setUnitExpanded] = useState<string | null>(null);
+  const [expandedSection, setExpandedSection] = useState<string | null>(null);
 
   // 필터링된 옵션 상태
   const [filteredMainTypes, setFilteredMainTypes] = useState<
@@ -194,120 +238,153 @@ export const SelectUnitType: React.FC<SelectUnitTypeProps> = ({
   // 선택 핸들러
   const handleSelectManufacturer = (item: { label: string; value: string }) => {
     setSelectedManufacturer(item);
-    setSelectedMainType({ label: '선택', value: '' });
-    setSelectedSubType({ id: '', typename: '선택' });
-    setSelectedDetailType({ key: '', value: '선택' });
-    setUnitExpanded(null);
+    setSelectedMainType({ label: '', value: '' });
+    setSelectedSubType({ id: '', typename: '' });
+    setSelectedDetailType({ key: '', value: '' });
+    setExpandedSection(null);
   };
 
   const handleSelectMainType = (item: { label: string; value: string }) => {
     setSelectedMainType(item);
-    setSelectedSubType({ id: '', typename: '선택' });
-    setSelectedDetailType({ key: '', value: '선택' });
-    setUnitExpanded(null);
+    setSelectedSubType({ id: '', typename: '' });
+    setSelectedDetailType({ key: '', value: '' });
+    setExpandedSection(null);
   };
 
   const handleSelectSubType = (item: { id: string; typename: string }) => {
     setSelectedSubType(item);
-    setSelectedDetailType({ key: '', value: '선택' });
-    setUnitExpanded(null);
+    setSelectedDetailType({ key: '', value: '' });
+    setExpandedSection(null);
   };
 
   const handleSelectDetailType = (item: { key: string; value: string }) => {
     setSelectedDetailType(item);
-    setUnitExpanded(null);
+    setExpandedSection(null);
   };
 
-  const handleAccordionPress = (id: string) => {
-    setUnitExpanded(unitExpanded === id ? null : id);
+  const handleToggleSection = (section: string) => {
+    setExpandedSection(expandedSection === section ? null : section);
   };
 
   return (
     <View style={styles.container}>
-      <List.Section style={styles.listSection}>
-        <SelectionItem
-          label="제조사"
-          value={selectedManufacturer.value || '선택'}
-          accordionId="1"
-          expanded={unitExpanded}
-          options={manufacturers}
-          onSelect={handleSelectManufacturer}
-          onAccordionPress={handleAccordionPress}
-        />
+      <SelectionItem
+        label="제조사"
+        value={selectedManufacturer.label}
+        expanded={expandedSection === 'manufacturer'}
+        options={manufacturers}
+        onSelect={handleSelectManufacturer}
+        onToggle={() => handleToggleSection('manufacturer')}
+      />
 
-        <SelectionItem
-          label="장비 타입"
-          value={selectedMainType.value || '선택'}
-          accordionId="2"
-          expanded={unitExpanded}
-          options={filteredMainTypes}
-          onSelect={handleSelectMainType}
-          onAccordionPress={handleAccordionPress}
-        />
+      <SelectionItem
+        label="장비 타입"
+        value={selectedMainType.label}
+        expanded={expandedSection === 'mainType'}
+        options={filteredMainTypes}
+        onSelect={handleSelectMainType}
+        onToggle={() => handleToggleSection('mainType')}
+        disabled={!selectedManufacturer.value}
+      />
 
-        <SelectionItem
-          label="장비 구분"
-          value={selectedSubType.typename || '선택'}
-          accordionId="3"
-          expanded={unitExpanded}
-          options={filteredTypeNames}
-          onSelect={handleSelectSubType}
-          onAccordionPress={handleAccordionPress}
-          renderTitle={item => item.typename}
-        />
+      <SelectionItem
+        label="장비 구분"
+        value={selectedSubType.typename}
+        expanded={expandedSection === 'subType'}
+        options={filteredTypeNames}
+        onSelect={handleSelectSubType}
+        onToggle={() => handleToggleSection('subType')}
+        renderTitle={item => item.typename}
+        disabled={!selectedMainType.value}
+      />
 
-        <SelectionItem
-          label="유니트명"
-          value={selectedDetailType.value || '선택'}
-          accordionId="4"
-          expanded={unitExpanded}
-          options={uniqueDetailTypes}
-          onSelect={handleSelectDetailType}
-          onAccordionPress={handleAccordionPress}
-          renderTitle={item => item.value}
-        />
-      </List.Section>
+      <SelectionItem
+        label="유니트명"
+        value={selectedDetailType.value}
+        expanded={expandedSection === 'detailType'}
+        options={uniqueDetailTypes}
+        onSelect={handleSelectDetailType}
+        onToggle={() => handleToggleSection('detailType')}
+        renderTitle={item => item.value}
+        disabled={!selectedSubType.id}
+      />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    minHeight: verticalScale(400),
-  },
-  listSection: {
-    paddingHorizontal: scale(4),
+    flex: 1,
   },
   selectionSection: {
     marginBottom: verticalScale(12),
   },
   sectionLabel: {
-    color: '#666666',
-    fontWeight: '600',
+    color: COLORS.text,
+    fontWeight: '500',
     marginBottom: verticalScale(8),
-    marginTop: verticalScale(4),
     fontSize: scale(14),
+    paddingLeft: scale(2),
   },
-  accordionContent: {
-    backgroundColor: '#F5F5F5',
-    borderRadius: scale(8),
-    marginVertical: verticalScale(1),
+  selectionHeader: {
+    backgroundColor: COLORS.background,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: COLORS.border,
+    borderRadius: scale(8),
+    paddingHorizontal: scale(14),
+    paddingVertical: verticalScale(12),
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: verticalScale(44),
   },
-  accordionTitle: {
-    color: '#333333',
-    fontWeight: '600',
-    fontSize: scale(16),
+  selectionHeaderDisabled: {
+    backgroundColor: COLORS.disabledBackground,
+    borderColor: COLORS.disabledBorder,
   },
-  listItem: {
-    paddingLeft: scale(16),
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+  selectionHeaderExpanded: {
+    borderColor: COLORS.primary,
   },
-  listItemTitle: {
-    color: '#333333',
+  selectionValue: {
+    flex: 1,
+    color: COLORS.text,
     fontSize: scale(14),
+    fontWeight: '400',
+  },
+  selectionValueDisabled: {
+    color: COLORS.textTertiary,
+  },
+  selectionPlaceholder: {
+    color: COLORS.textSecondary,
+  },
+  optionsList: {
+    marginTop: verticalScale(2),
+    backgroundColor: COLORS.background,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: scale(8),
+    overflow: 'hidden',
+    maxHeight: verticalScale(200),
+  },
+  optionItem: {
+    paddingHorizontal: scale(14),
+    paddingVertical: verticalScale(12),
+    borderBottomWidth: 0.5,
+    borderBottomColor: COLORS.border,
+    backgroundColor: COLORS.background,
+  },
+  optionItemLast: {
+    borderBottomWidth: 0,
+  },
+  optionText: {
+    color: COLORS.text,
+    fontSize: scale(13),
+    fontWeight: '400',
+  },
+  optionTextDisabled: {
+    color: COLORS.textSecondary,
+    fontSize: scale(14),
+    textAlign: 'center',
+    fontStyle: 'normal',
   },
 });

@@ -111,8 +111,7 @@ export const useMyUnits = (
   return useQuery({
     queryKey: ['myUnits', location, userId],
     queryFn: () => getUnitLocationHistory(location, userId),
-    // staleTime: 0, // 항상 stale - 매번 백그라운드에서 최신 데이터 fetch
-    staleTime: 5 * 60 * 1000, // 임시
+    staleTime: 0, // 항상 stale - 매번 백그라운드에서 최신 데이터 fetch
     gcTime: 5 * 60 * 1000, // 5분만 캐시 보관 (메모리 절약)
     refetchOnMount: true, // 컴포넌트 마운트시 항상 refetch
     refetchOnWindowFocus: true, // 앱이 포커스될 때 refetch

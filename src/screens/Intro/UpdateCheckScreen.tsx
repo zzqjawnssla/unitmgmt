@@ -144,8 +144,8 @@ const UpdateCheckScreen: React.FC<Props> = ({ navigation, route }) => {
       setUpdateState('installing');
       console.log('iOS 업데이트 시작...');
 
-      // App Store 또는 manifest URL 사용
-      const updateUrl = updateInfo.manifestUrl || undefined;
+      // Enterprise In-House 배포: manifestUrl 또는 installUrl 사용
+      const updateUrl = updateInfo.manifestUrl || updateInfo.installUrl || undefined;
       await updateiOSApp(updateUrl);
       
       setUpdateState('completed');

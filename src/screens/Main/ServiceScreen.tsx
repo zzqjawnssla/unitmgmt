@@ -1,12 +1,12 @@
 import React from 'react';
-import { Platform, ScrollView, TouchableOpacity, View, StyleSheet } from 'react-native';
 import {
-  Surface,
-  Text,
-  Appbar,
-  Card,
-  Snackbar,
-} from 'react-native-paper';
+  Platform,
+  ScrollView,
+  TouchableOpacity,
+  View,
+  StyleSheet,
+} from 'react-native';
+import { Surface, Text, Appbar, Snackbar } from 'react-native-paper';
 import { scale, verticalScale } from 'react-native-size-matters';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
@@ -15,6 +15,21 @@ import { useState } from 'react';
 import type { RootStackParamList } from '../../navigation/RootStackNavigation.tsx';
 
 type ServiceScreenNavigationProp = NavigationProp<RootStackParamList>;
+
+// KakaoTalk-style colors
+const COLORS = {
+  primary: '#F47725',
+  primaryLight: 'rgba(244, 119, 37, 0.1)',
+  background: '#FFFFFF',
+  surface: '#F7F7F7',
+  text: '#000000',
+  textSecondary: '#666666',
+  textTertiary: '#999999',
+  border: '#E6E6E6',
+  success: '#4CAF50',
+  inactive: '#CCCCCC',
+  inactiveBackground: '#FAFAFA',
+};
 
 interface ServiceItem {
   key: number;
@@ -89,53 +104,54 @@ const ServiceScreen: React.FC = () => {
     <TouchableOpacity
       key={item.key}
       onPress={() => handleServicePress(item)}
-      style={styles.serviceItem}
+      style={[
+        styles.serviceItem,
+        isActive ? styles.activeServiceItem : styles.inactiveServiceItem,
+      ]}
     >
-      <Card style={[
-        styles.serviceCard, 
-        isActive ? styles.activeCard : styles.inactiveCard
-      ]}>
-        <Card.Content>
-          <View style={styles.serviceContent}>
-            <MaterialCommunityIcons
-              name={item.icon as any}
-              size={scale(48)}
-              color={isActive ? '#F47725' : '#CCCCCC'}
-              style={styles.serviceIcon}
-            />
-            <View style={styles.serviceTextContainer}>
-              <Text 
-                variant="titleLarge" 
-                style={[
-                  styles.serviceType,
-                  { color: isActive ? '#333333' : '#CCCCCC' }
-                ]}
-              >
-                {item.type}
-              </Text>
-              <Text 
-                variant="titleMedium" 
-                style={[
-                  styles.serviceName,
-                  { color: isActive ? '#F47725' : '#CCCCCC' }
-                ]}
-              >
-                {item.service}
-              </Text>
-            </View>
-          </View>
-        </Card.Content>
-      </Card>
+      <View style={styles.serviceContent}>
+        <MaterialCommunityIcons
+          name={item.icon as any}
+          size={scale(40)}
+          color={isActive ? COLORS.primary : COLORS.inactive}
+          style={styles.serviceIcon}
+        />
+        <View style={styles.serviceTextContainer}>
+          <Text
+            variant="titleMedium"
+            style={[
+              styles.serviceType,
+              { color: isActive ? COLORS.text : COLORS.inactive },
+            ]}
+          >
+            {item.type}
+          </Text>
+          <Text
+            variant="bodyMedium"
+            style={[
+              styles.serviceName,
+              { color: isActive ? COLORS.primary : COLORS.inactive },
+            ]}
+          >
+            {item.service}
+          </Text>
+        </View>
+        <MaterialCommunityIcons
+          name="chevron-right"
+          size={scale(20)}
+          color={isActive ? COLORS.textSecondary : COLORS.inactive}
+        />
+      </View>
     </TouchableOpacity>
   );
 
   return (
     <Surface style={styles.container}>
-      <Appbar.Header>
-        <Appbar.Content title="서비스" />
+      <Appbar.Header style={styles.appbar}>
+        <Appbar.Content title="서비스" titleStyle={styles.appbarTitle} />
       </Appbar.Header>
 
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
@@ -145,17 +161,17 @@ const ServiceScreen: React.FC = () => {
           <View style={styles.sectionHeader}>
             <MaterialIcons
               name="check-circle"
-              size={scale(20)}
-              color="#4CAF50"
+              size={scale(18)}
+              color={COLORS.success}
               style={styles.sectionIcon}
             />
-            <Text variant="titleLarge" style={styles.sectionTitle}>
+            <Text variant="titleMedium" style={styles.sectionTitle}>
               제공 서비스
             </Text>
           </View>
-          
+
           <View style={styles.serviceList}>
-            {ActiveServiceList.map((item) => renderServiceItem(item, true))}
+            {ActiveServiceList.map(item => renderServiceItem(item, true))}
           </View>
         </View>
 
@@ -163,18 +179,18 @@ const ServiceScreen: React.FC = () => {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <MaterialIcons
-              name="check-circle"
-              size={scale(20)}
-              color="#F44336"
+              name="schedule"
+              size={scale(18)}
+              color={COLORS.textSecondary}
               style={styles.sectionIcon}
             />
-            <Text variant="titleLarge" style={styles.sectionTitle}>
+            <Text variant="titleMedium" style={styles.sectionTitle}>
               예정 서비스
             </Text>
           </View>
-          
+
           <View style={styles.serviceList}>
-            {NonActiveServiceList.map((item) => renderServiceItem(item, false))}
+            {NonActiveServiceList.map(item => renderServiceItem(item, false))}
           </View>
         </View>
       </ScrollView>
@@ -183,8 +199,9 @@ const ServiceScreen: React.FC = () => {
         visible={snackbarVisible}
         onDismiss={() => setSnackbarVisible(false)}
         duration={3000}
+        style={styles.snackbar}
       >
-        준비 중인 서비스입니다.
+        <Text style={styles.snackbarText}>준비 중인 서비스입니다.</Text>
       </Snackbar>
     </Surface>
   );
@@ -193,55 +210,65 @@ const ServiceScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.background,
+  },
+  appbar: {
+    backgroundColor: COLORS.background,
+    elevation: 0,
+    shadowOpacity: 0,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  appbarTitle: {
+    color: COLORS.text,
+    fontWeight: '800',
+    textAlign: 'center',
   },
   scrollView: {
     flex: 1,
+    backgroundColor: COLORS.surface,
   },
   scrollContent: {
-    paddingHorizontal: scale(16),
-    paddingTop: Platform.OS === 'ios' ? 0 : verticalScale(16),
+    paddingTop: verticalScale(20),
     paddingBottom: verticalScale(20),
   },
   section: {
-    marginBottom: verticalScale(32),
+    marginBottom: verticalScale(24),
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: verticalScale(16),
+    paddingHorizontal: scale(20),
+    paddingVertical: verticalScale(12),
+    backgroundColor: COLORS.background,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
   },
   sectionIcon: {
     marginRight: scale(8),
   },
   sectionTitle: {
-    fontWeight: '700',
-    color: '#333333',
+    fontWeight: '600',
+    color: COLORS.text,
   },
   serviceList: {
-    gap: verticalScale(12),
+    backgroundColor: COLORS.background,
   },
   serviceItem: {
-    // No specific styles needed for TouchableOpacity
+    paddingHorizontal: scale(20),
+    paddingVertical: verticalScale(16),
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
   },
-  serviceCard: {
-    elevation: 2,
-    borderRadius: scale(12),
+  activeServiceItem: {
+    backgroundColor: COLORS.background,
   },
-  activeCard: {
-    borderWidth: 2,
-    borderColor: '#F47725',
-    backgroundColor: '#FFFFFF',
-  },
-  inactiveCard: {
-    borderWidth: 2,
-    borderColor: '#E0E0E0',
-    backgroundColor: '#FAFAFA',
+  inactiveServiceItem: {
+    backgroundColor: COLORS.inactiveBackground,
   },
   serviceContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: verticalScale(8),
   },
   serviceIcon: {
     marginRight: scale(16),
@@ -250,12 +277,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   serviceType: {
-    fontWeight: '700',
+    fontWeight: '600',
     marginBottom: verticalScale(4),
   },
   serviceName: {
-    fontWeight: '600',
-    textAlign: 'right',
+    fontWeight: '500',
+  },
+  snackbar: {
+    backgroundColor: COLORS.text,
+    marginBottom: verticalScale(20),
+  },
+  snackbarText: {
+    color: COLORS.background,
   },
 });
 

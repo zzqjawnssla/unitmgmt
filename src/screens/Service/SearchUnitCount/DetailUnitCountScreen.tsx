@@ -13,11 +13,14 @@ import {
   useNavigation,
   NavigationProp,
 } from '@react-navigation/native';
-import { Text, Card, Chip, Snackbar, Appbar, Surface } from 'react-native-paper';
+import { Text, Snackbar, Appbar, Surface } from 'react-native-paper';
 import { scale, verticalScale } from 'react-native-size-matters';
 import MaterialIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { api } from '../../../services/api/api.tsx';
-import { ServiceStackParamList, RootStackParamList } from '../../../navigation/RootStackNavigation.tsx';
+import {
+  ServiceStackParamList,
+  RootStackParamList,
+} from '../../../navigation/RootStackNavigation.tsx';
 import { useAuth } from '../../../store/AuthContext.tsx';
 import FlatList = Animated.FlatList;
 
@@ -35,20 +38,60 @@ interface APIResponse {
   results: UnitItem[];
 }
 
-// Brand Colors
-const BRAND_COLORS = {
+// KakaoTalk-style colors
+const COLORS = {
   primary: '#F47725',
-  background: '#F5F5F5',
-  surface: '#FFFFFF',
+  primaryLight: 'rgba(244, 119, 37, 0.1)',
+  background: '#FFFFFF',
+  surface: '#F9F9F9',
+  text: '#000000',
   textSecondary: '#666666',
+  textTertiary: '#999999',
+  border: '#E0E0E0',
+  divider: '#F0F0F0',
   success: '#4CAF50',
+  warning: '#FF9800',
+  error: '#F44336',
+  info: '#2196F3',
 };
 
 export const DetailUnitCountScreen: React.FC = () => {
-  const route = useRoute<RouteProp<ServiceStackParamList, 'DetailUnitCountScreen'>>();
-  const navigation = useNavigation<NavigationProp<ServiceStackParamList & RootStackParamList>>();
+  const route =
+    useRoute<RouteProp<ServiceStackParamList, 'DetailUnitCountScreen'>>();
+  const navigation =
+    useNavigation<NavigationProp<ServiceStackParamList & RootStackParamList>>();
   const { locationId, locationInstanceId, detailTypeId } = route.params;
   const { setSearchTerm, setSearchCode } = useAuth();
+
+  // 상태별 색상과 표시 텍스트 가져오기
+  const getStateStyle = (unitState: string) => {
+    switch (unitState) {
+      case '정상':
+        return {
+          backgroundColor: `${COLORS.success}20`,
+          textColor: COLORS.success,
+          displayText: '정상',
+        };
+      case '불량':
+        return {
+          backgroundColor: `${COLORS.warning}20`,
+          textColor: COLORS.warning,
+          displayText: '불량',
+        };
+      case '수리불가(불용)':
+        return {
+          backgroundColor: `${COLORS.error}20`,
+          textColor: COLORS.error,
+          displayText: '불용',
+        };
+      default:
+        return {
+          backgroundColor: COLORS.primaryLight,
+          textColor: COLORS.primary,
+          displayText: unitState,
+        };
+    }
+  };
 
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -70,9 +113,9 @@ export const DetailUnitCountScreen: React.FC = () => {
     // Set search parameters and navigate to SearchResultScreen
     setSearchTerm({ sktbarcode: item.skt_barcode, serial: '' });
     setSearchCode({ value: '1', label: 'SKT바코드' });
-    
+
     navigation.navigate('SearchStack', {
-      screen: 'SearchResult'
+      screen: 'SearchResult',
     });
   };
 
@@ -81,7 +124,7 @@ export const DetailUnitCountScreen: React.FC = () => {
     if (isLoadingMore) {
       return (
         <View style={styles.footerLoader}>
-          <ActivityIndicator size="small" color={BRAND_COLORS.primary} />
+          <ActivityIndicator size="small" color={COLORS.primary} />
           <Text style={styles.footerText}>더 많은 데이터를 불러오는 중...</Text>
         </View>
       );
@@ -134,8 +177,8 @@ export const DetailUnitCountScreen: React.FC = () => {
         setResult(prevList => {
           // 중복 제거: 기존 결과의 ID들을 Set으로 만들어 중복 체크
           const existingIds = new Set(prevList.results.map(item => item.id));
-          const newResults = response.data.results.filter((item: UnitItem) => 
-            !existingIds.has(item.id)
+          const newResults = response.data.results.filter(
+            (item: UnitItem) => !existingIds.has(item.id),
           );
 
           return {
@@ -161,33 +204,42 @@ export const DetailUnitCountScreen: React.FC = () => {
 
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <Text
-          variant="headlineMedium"
-          style={[styles.loadingText, { color: BRAND_COLORS.primary }]}
-        >
-          Loading...
-        </Text>
-        <ActivityIndicator
-          size="large"
-          color={BRAND_COLORS.primary}
-          animating={true}
-        />
-      </View>
+      <Surface style={styles.container}>
+        <Appbar.Header style={styles.appbar}>
+          <Appbar.BackAction
+            onPress={() => navigation.goBack()}
+            iconColor={COLORS.text}
+          />
+          <Appbar.Content
+            title="유니트 상세 현황"
+            titleStyle={styles.appbarTitle}
+          />
+        </Appbar.Header>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+          <Text style={styles.loadingText}>데이터를 불러오는 중...</Text>
+        </View>
+      </Surface>
     );
   }
 
   return (
     <Surface style={styles.container}>
-      <Appbar.Header>
-        <Appbar.BackAction onPress={() => navigation.goBack()} />
-        <Appbar.Content title="유니트 상세 현황" />
+      <Appbar.Header style={styles.appbar}>
+        <Appbar.BackAction
+          onPress={() => navigation.goBack()}
+          iconColor={COLORS.text}
+        />
+        <Appbar.Content
+          title="유니트 상세 현황"
+          titleStyle={styles.appbarTitle}
+        />
       </Appbar.Header>
 
       <View style={styles.contentContainer}>
         <View style={styles.countContainer}>
           <Text style={styles.countText}>
-            total count : {result.results?.length || 0} / {result.count || 0}
+            총 {result.results?.length || 0}개 / {result.count || 0}개
           </Text>
         </View>
         {result.results && result.results.length > 0 ? (
@@ -195,40 +247,54 @@ export const DetailUnitCountScreen: React.FC = () => {
             data={result.results}
             renderItem={({ item }) => {
               return (
-                <Card style={styles.itemCard}>
-                  <TouchableOpacity
-                    onPress={() => {
-                      goToDetailScreen(item);
-                    }}
-                  >
-                    <View style={styles.itemContainer}>
-                      <View style={styles.itemContent}>
-                        <Chip
-                          style={styles.stateChip}
-                          textStyle={styles.chipText}
-                        >
-                          {item.unit_state}
-                        </Chip>
+                <TouchableOpacity
+                  style={styles.itemCard}
+                  onPress={() => {
+                    goToDetailScreen(item);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.itemContainer}>
+                    <View style={styles.itemContent}>
+                      {(() => {
+                        const stateStyle = getStateStyle(item.unit_state);
+                        return (
+                          <View
+                            style={[
+                              styles.stateChip,
+                              { backgroundColor: stateStyle.backgroundColor },
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                styles.chipText,
+                                { color: stateStyle.textColor },
+                              ]}
+                            >
+                              {stateStyle.displayText}
+                            </Text>
+                          </View>
+                        );
+                      })()}
 
-                        <View style={styles.itemInfo}>
-                          <Text variant="bodyLarge" style={styles.barcodeText}>
-                            {item.skt_barcode}
-                          </Text>
-                          <Text variant="bodyMedium" style={styles.serialText}>
-                            {item.unit_serial}
-                          </Text>
-                        </View>
-                      </View>
-                      <View>
-                        <MaterialIcons
-                          name={'chevron-right'}
-                          size={scale(20)}
-                          color={BRAND_COLORS.textSecondary}
-                        />
+                      <View style={styles.itemInfo}>
+                        <Text style={styles.barcodeText}>
+                          {item.skt_barcode}
+                        </Text>
+                        <Text style={styles.serialText}>
+                          {item.unit_serial}
+                        </Text>
                       </View>
                     </View>
-                  </TouchableOpacity>
-                </Card>
+                    <View>
+                      <MaterialIcons
+                        name={'chevron-right'}
+                        size={scale(20)}
+                        color={COLORS.textSecondary}
+                      />
+                    </View>
+                  </View>
+                </TouchableOpacity>
               );
             }}
             keyExtractor={(item, index) => `${item.id}-${index}`}
@@ -240,19 +306,24 @@ export const DetailUnitCountScreen: React.FC = () => {
             removeClippedSubviews={false}
           />
         ) : (
-          <Text style={styles.noDataText}>데이터가 없습니다.</Text>
+          <View style={styles.emptyContainer}>
+            <Text style={styles.noDataText}>데이터가 없습니다.</Text>
+          </View>
         )}
       </View>
       <Snackbar
         visible={snackbarVisible}
         onDismiss={() => setSnackbarVisible(false)}
         duration={3000}
+        style={styles.snackbar}
+        theme={{ colors: { primary: COLORS.primary } }}
         action={{
           label: '확인',
+          labelStyle: { color: COLORS.primary },
           onPress: () => setSnackbarVisible(false),
         }}
       >
-        {snackbarMessage}
+        <Text style={styles.snackbarText}>{snackbarMessage}</Text>
       </Snackbar>
     </Surface>
   );
@@ -261,45 +332,60 @@ export const DetailUnitCountScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.background,
+  },
+  appbar: {
+    backgroundColor: COLORS.background,
+    elevation: 0,
+    shadowOpacity: 0,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  appbarTitle: {
+    color: COLORS.text,
+    fontWeight: '600',
   },
   contentContainer: {
     flex: 1,
-    padding: scale(12),
+    backgroundColor: COLORS.surface,
+    paddingHorizontal: scale(20),
+    paddingTop: verticalScale(16),
   },
   loadingContainer: {
     flex: 1,
-    flexDirection: 'column',
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: COLORS.surface,
   },
   loadingText: {
-    textAlign: 'center',
-    marginBottom: verticalScale(16),
-    fontWeight: 'bold',
+    marginTop: verticalScale(16),
+    fontSize: scale(16),
+    color: COLORS.textSecondary,
   },
   countContainer: {
-    marginVertical: verticalScale(8),
+    marginBottom: verticalScale(16),
   },
   countText: {
     textAlign: 'right',
-    fontSize: scale(12),
-    color: BRAND_COLORS.textSecondary,
+    fontSize: scale(14),
+    color: COLORS.textSecondary,
+    fontWeight: '500',
   },
   flatList: {
-    marginBottom: verticalScale(8),
+    flex: 1,
   },
   itemCard: {
-    marginVertical: verticalScale(4),
-    elevation: 2,
-    backgroundColor: BRAND_COLORS.surface,
+    backgroundColor: COLORS.background,
+    marginBottom: verticalScale(8),
+    borderRadius: scale(12),
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    padding: scale(16),
   },
   itemContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: scale(12),
-    flexWrap: 'wrap',
   },
   itemContent: {
     flexDirection: 'row',
@@ -307,11 +393,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   stateChip: {
-    backgroundColor: BRAND_COLORS.success,
+    paddingHorizontal: scale(8),
+    paddingVertical: verticalScale(4),
+    borderRadius: scale(12),
+    alignSelf: 'flex-start',
   },
   chipText: {
-    color: 'white',
-    fontSize: scale(10),
+    fontSize: scale(12),
+    fontWeight: '600',
   },
   itemInfo: {
     flexDirection: 'column',
@@ -319,17 +408,24 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   barcodeText: {
-    fontWeight: 'bold',
-    color: '#333',
+    fontSize: scale(16),
+    fontWeight: '600',
+    color: COLORS.text,
+    marginBottom: verticalScale(2),
   },
   serialText: {
-    color: BRAND_COLORS.textSecondary,
+    fontSize: scale(12),
+    color: COLORS.textSecondary,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   noDataText: {
     textAlign: 'center',
-    fontSize: scale(14),
-    color: BRAND_COLORS.textSecondary,
-    marginTop: verticalScale(40),
+    fontSize: scale(16),
+    color: COLORS.textSecondary,
   },
   footerLoader: {
     paddingVertical: verticalScale(16),
@@ -338,20 +434,26 @@ const styles = StyleSheet.create({
   },
   footerText: {
     marginTop: verticalScale(8),
-    fontSize: scale(12),
-    color: BRAND_COLORS.textSecondary,
+    fontSize: scale(14),
+    color: COLORS.textSecondary,
   },
   footerEndMessage: {
     paddingVertical: verticalScale(20),
     alignItems: 'center',
     justifyContent: 'center',
     borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
-    marginTop: verticalScale(10),
+    borderTopColor: COLORS.border,
+    marginTop: verticalScale(16),
   },
   footerEndText: {
-    fontSize: scale(12),
-    color: BRAND_COLORS.textSecondary,
-    fontStyle: 'italic',
+    fontSize: scale(14),
+    color: COLORS.textSecondary,
+  },
+  snackbar: {
+    backgroundColor: COLORS.text,
+    marginBottom: verticalScale(20),
+  },
+  snackbarText: {
+    color: COLORS.background,
   },
 });

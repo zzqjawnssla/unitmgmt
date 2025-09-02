@@ -121,7 +121,7 @@ if [ "$SKIP_BUILD" = false ]; then
     
     if [ "$DRY_RUN" = true ]; then
         echo -e "${CYAN}[DRY RUN] Would build APK...${NC}"
-        APK_FILE="android/app/unitmgmt-v${CURRENT_VERSION}-release.apk"
+        APK_FILE="android/app/unitmgmt-v${CURRENT_VERSION}.apk"
         APK_SIZE_BYTES=50000000  # 가상 크기
     else
         # Clean previous builds

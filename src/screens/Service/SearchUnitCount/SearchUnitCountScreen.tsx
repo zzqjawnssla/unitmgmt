@@ -10,9 +10,6 @@ import {
   Surface,
   Text,
   Appbar,
-  Card,
-  Chip,
-  SegmentedButtons,
   Button,
   Snackbar,
   ActivityIndicator,
@@ -28,6 +25,21 @@ import { useNavigation, NavigationProp } from '@react-navigation/native';
 
 type SearchUnitCountScreenNavigationProp =
   NavigationProp<ServiceStackParamList>;
+
+// KakaoTalk-style colors
+const COLORS = {
+  primary: '#F47725',
+  primaryLight: 'rgba(244, 119, 37, 0.1)',
+  background: '#FFFFFF',
+  surface: '#F7F7F7',
+  text: '#000000',
+  textSecondary: '#666666',
+  textTertiary: '#999999',
+  border: '#E6E6E6',
+  success: '#4CAF50',
+  error: '#F44336',
+  warning: '#9C27B0',
+};
 
 interface LocationType {
   id: string | number;
@@ -131,19 +143,28 @@ const SearchUnitCountScreen: React.FC = () => {
     }
   }, [regionList, user?.region, selectRegion.id]);
 
-  // Auto scroll for region selection
+  // Auto scroll for region selection - ensure selected region is visible
   useEffect(() => {
     if (selectRegion?.region && scrollViewRef.current && regionList?.results) {
       const index = regionList.results.findIndex(
         (item: RegionType) => item.region === selectRegion.region,
       );
       if (index !== -1) {
-        // Region 버튼의 고정된 너비를 사용
-        const buttonWidth = scale(100); // 더 큰 고정 너비
-        const buttonMargin = scale(12); // marginLeft + marginRight (6 + 6)
-        const totalButtonWidth = buttonWidth + buttonMargin;
+        // Use fixed chip width for consistent calculation
+        const chipWidth = scale(100); // Fixed width for all chips
+        const chipMargin = scale(8);
+        const totalChipWidth = chipWidth + chipMargin;
 
-        const scrollPosition = Math.max(0, index * totalButtonWidth);
+        // Screen width consideration for viewport
+        const screenWidth = scale(350); // Approximate screen width
+        const scrollViewPadding = scale(40); // Total horizontal padding
+        const visibleWidth = screenWidth - scrollViewPadding;
+
+        // Calculate position to center the selected chip in viewport
+        const selectedChipPosition = index * totalChipWidth;
+        const centerOffset = visibleWidth / 2 - chipWidth / 2;
+        const scrollPosition = Math.max(0, selectedChipPosition - centerOffset);
+
         setTimeout(() => {
           scrollViewRef.current?.scrollTo({
             x: scrollPosition,
@@ -255,132 +276,159 @@ const SearchUnitCountScreen: React.FC = () => {
         onPress={() => goToDetail(item)}
         style={styles.locationItem}
       >
-        <Card style={styles.locationCard}>
+        <View style={styles.locationCard}>
           <View style={styles.locationHeader}>
-            <MaterialIcons
-              name="location-on"
-              size={scale(24)}
-              color="#F47725"
-              style={styles.locationIcon}
-            />
-            <View style={styles.locationInfo}>
-              <Text variant="titleMedium" style={styles.locationName}>
-                {locationName}
-              </Text>
-              <Text variant="bodyMedium" style={styles.locationTeam}>
-                {locationManageTeam}
-              </Text>
+            <View style={styles.locationHeaderLeft}>
+              <MaterialIcons
+                name="location-on"
+                size={scale(18)}
+                color={COLORS.primary}
+                style={styles.locationIcon}
+              />
+              <View style={styles.locationInfo}>
+                <Text variant="titleMedium" style={styles.locationName}>
+                  {locationName}
+                </Text>
+                <Text variant="bodySmall" style={styles.locationTeam}>
+                  {locationManageTeam}
+                </Text>
+              </View>
             </View>
+            <MaterialIcons
+              name="chevron-right"
+              size={scale(20)}
+              color={COLORS.textSecondary}
+            />
           </View>
 
           <View style={styles.statusContainer}>
-            <Chip
-              mode="flat"
-              textStyle={styles.chipText}
-              style={[styles.statusChip, { backgroundColor: '#4CAF50' }]}
-            >
-              정상:{' '}
-              {item.unit_states?.find(
-                (state: any) => state.unit_state === '정상',
-              )?.count || 0}
-            </Chip>
+            <View style={styles.statusRow}>
+              <View style={[styles.statusItem, styles.statusSuccess]}>
+                <Text variant="bodySmall" style={styles.statusLabel}>
+                  정상
+                </Text>
+                <Text variant="titleMedium" style={styles.statusValue}>
+                  {item.unit_states?.find(
+                    (state: any) => state.unit_state === '정상',
+                  )?.count || 0}
+                </Text>
+              </View>
 
-            <Chip
-              mode="flat"
-              textStyle={styles.chipText}
-              style={[styles.statusChip, { backgroundColor: '#F44336' }]}
-            >
-              불량:{' '}
-              {item.unit_states?.find(
-                (state: any) => state.unit_state === '불량',
-              )?.count || 0}
-            </Chip>
+              <View style={[styles.statusItem, styles.statusError]}>
+                <Text variant="bodySmall" style={styles.statusLabel}>
+                  불량
+                </Text>
+                <Text variant="titleMedium" style={styles.statusValue}>
+                  {item.unit_states?.find(
+                    (state: any) => state.unit_state === '불량',
+                  )?.count || 0}
+                </Text>
+              </View>
 
-            <Chip
-              mode="flat"
-              textStyle={styles.chipText}
-              style={[styles.statusChip, { backgroundColor: '#9C27B0' }]}
-            >
-              수리불가:{' '}
-              {item.unit_states?.find(
-                (state: any) => state.unit_state === '수리불가(불용)',
-              )?.count || 0}
-            </Chip>
+              <View style={[styles.statusItem, styles.statusWarning]}>
+                <Text variant="bodySmall" style={styles.statusLabel}>
+                  수리불가
+                </Text>
+                <Text variant="titleMedium" style={styles.statusValue}>
+                  {item.unit_states?.find(
+                    (state: any) => state.unit_state === '수리불가(불용)',
+                  )?.count || 0}
+                </Text>
+              </View>
+            </View>
           </View>
-        </Card>
+        </View>
       </TouchableOpacity>
     );
   };
 
   const renderEmptyList = () => (
     <View style={styles.emptyContainer}>
-      <Text variant="bodyLarge" style={styles.emptyText}>
-        조회결과가 없습니다
-      </Text>
+      <View style={styles.emptyCard}>
+        <MaterialIcons
+          name="search-off"
+          size={scale(48)}
+          color={COLORS.textTertiary}
+          style={styles.emptyIcon}
+        />
+        <Text variant="titleMedium" style={styles.emptyTitle}>
+          조회 결과가 없습니다
+        </Text>
+        <Text variant="bodyMedium" style={styles.emptyText}>
+          검색 조건을 확인하고 다시 시도해주세요
+        </Text>
+      </View>
     </View>
   );
 
   return (
     <Surface style={styles.container}>
-      <Appbar.Header>
+      <Appbar.Header style={styles.appbar}>
         <Appbar.BackAction onPress={() => navigation.goBack()} />
-        <Appbar.Content title="유니트 현황 조회" />
+        <Appbar.Content
+          title="유니트 현황 조회"
+          titleStyle={styles.appbarTitle}
+        />
       </Appbar.Header>
 
       <View style={styles.content}>
-        {/* Unit Selection Card */}
-        <TouchableOpacity onPress={handleOpenOptionModal}>
-          <Card style={styles.selectionCard}>
-            <Card.Content>
-              <View style={styles.selectionContent}>
-                {detailType?.value !== '' ? (
-                  <>
-                    <View style={styles.selectionInfo}>
-                      <Text variant="titleLarge" style={styles.selectionTitle}>
-                        {detailType.value}
-                      </Text>
-                      <Text
-                        variant="bodyMedium"
-                        style={styles.selectionSubtitle}
-                        numberOfLines={1}
-                      >
-                        {mainType.label} · {subType.typename} ·{' '}
-                        {manufacturer.label}
-                      </Text>
-                    </View>
-                    <MaterialIcons
-                      name="refresh"
-                      size={scale(24)}
-                      color="#666"
-                    />
-                  </>
-                ) : (
-                  <>
-                    <View style={styles.selectionInfo}>
-                      <Text
-                        variant="titleMedium"
-                        style={styles.selectionPlaceholder}
-                      >
-                        유니트를 선택해주세요.
-                      </Text>
-                    </View>
-                    <MaterialIcons
-                      name="search"
-                      size={scale(24)}
-                      color="#666"
-                    />
-                  </>
-                )}
-              </View>
-            </Card.Content>
-          </Card>
-        </TouchableOpacity>
+        {/* Unit Selection */}
+        <View style={styles.selectionSection}>
+          <TouchableOpacity
+            onPress={handleOpenOptionModal}
+            style={styles.selectionCard}
+          >
+            <View style={styles.selectionContent}>
+              {detailType?.value !== '' ? (
+                <>
+                  <View style={styles.selectionInfo}>
+                    <Text variant="titleMedium" style={styles.selectionTitle}>
+                      {detailType.value}
+                    </Text>
+                    <Text
+                      variant="bodySmall"
+                      style={styles.selectionSubtitle}
+                      numberOfLines={1}
+                    >
+                      {mainType.label} · {subType.typename} ·{' '}
+                      {manufacturer.label}
+                    </Text>
+                  </View>
+                  <MaterialIcons
+                    name="refresh"
+                    size={scale(20)}
+                    color={COLORS.textSecondary}
+                  />
+                </>
+              ) : (
+                <>
+                  <View style={styles.selectionInfo}>
+                    <Text
+                      variant="titleMedium"
+                      style={styles.selectionPlaceholder}
+                    >
+                      유니트를 선택해주세요.
+                    </Text>
+                  </View>
+                  <MaterialIcons
+                    name="search"
+                    size={scale(20)}
+                    color={COLORS.textSecondary}
+                  />
+                </>
+              )}
+            </View>
+          </TouchableOpacity>
+        </View>
 
         {/* Region Selection */}
         <View style={styles.filterSection}>
+          <Text variant="titleSmall" style={styles.sectionTitle}>
+            지역 선택
+          </Text>
           {regionLoading ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="small" color="#F47725" />
+              <ActivityIndicator size="small" color={COLORS.primary} />
               <Text variant="bodySmall" style={styles.loadingText}>
                 지역 정보 로딩 중...
               </Text>
@@ -392,81 +440,78 @@ const SearchUnitCountScreen: React.FC = () => {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.horizontalScroll}
             >
-              <SegmentedButtons
-                value={selectRegion?.region || ''}
-                onValueChange={(region: string) => {
-                  const selectedItem = regionList?.results?.find(
-                    (item: RegionType) => item.region === region,
-                  );
-                  if (selectedItem) {
+              {regionList?.results?.map((item: RegionType) => (
+                <TouchableOpacity
+                  key={item.id}
+                  onPress={() => {
                     setSelectRegion({
-                      id: selectedItem.id,
-                      region: selectedItem.region,
+                      id: item.id,
+                      region: item.region,
                     });
-                  }
-                }}
-                buttons={
-                  regionList?.results?.map((item: RegionType) => ({
-                    value: item.region,
-                    label: item.region,
-                    style: [
-                      styles.regionSegmentButton,
+                  }}
+                  style={[
+                    styles.regionChip,
+                    selectRegion?.region === item.region &&
+                      styles.regionChipSelected,
+                  ]}
+                >
+                  <Text
+                    variant="bodyMedium"
+                    style={[
+                      styles.regionChipText,
                       selectRegion?.region === item.region &&
-                        styles.regionSelectedSegmentButton,
-                    ],
-                    labelStyle: [
-                      styles.regionSegmentLabel,
-                      selectRegion?.region === item.region &&
-                        styles.regionSelectedSegmentLabel,
-                    ],
-                  })) || []
-                }
-                style={styles.regionSegmentedButtons}
-              />
+                        styles.regionChipTextSelected,
+                    ]}
+                  >
+                    {item.region}
+                  </Text>
+                </TouchableOpacity>
+              ))}
             </ScrollView>
           )}
         </View>
 
         {/* Location Selection */}
         <View style={styles.filterSection}>
+          <Text variant="titleSmall" style={styles.sectionTitle}>
+            위치 선택
+          </Text>
           {locationLoading ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="small" color="#F47725" />
+              <ActivityIndicator size="small" color={COLORS.primary} />
               <Text variant="bodySmall" style={styles.loadingText}>
                 위치 정보 로딩 중...
               </Text>
             </View>
           ) : filteredLocationList.length > 0 ? (
-            <View style={styles.locationButtonContainer}>
-              <SegmentedButtons
-                buttons={filteredLocationList.map((item: LocationType) => ({
-                  value: item.id.toString(),
-                  label: item.location,
-                  style: [
-                    styles.locationSegmentButton,
-                    selectLocation?.id.toString() === item.id.toString() &&
-                      styles.locationSelectedSegmentButton,
-                  ],
-                  labelStyle: [
-                    styles.locationSegmentLabel,
-                    selectLocation?.id.toString() === item.id.toString() &&
-                      styles.locationSelectedSegmentLabel,
-                  ],
-                }))}
-                value={selectLocation?.id.toString() || ''}
-                onValueChange={(location: string) => {
-                  const selectedItem = filteredLocationList.find(
-                    (item: LocationType) => item.id.toString() === location,
-                  );
-                  if (selectedItem) {
+            <View style={styles.locationGrid}>
+              {filteredLocationList.map((item: LocationType) => (
+                <TouchableOpacity
+                  key={item.id}
+                  onPress={() => {
                     setSelectLocation({
-                      id: selectedItem.id,
-                      location: selectedItem.location,
+                      id: item.id,
+                      location: item.location,
                     });
-                  }
-                }}
-                style={styles.locationSegmentedButtons}
-              />
+                  }}
+                  style={[
+                    styles.locationChip,
+                    selectLocation?.id.toString() === item.id.toString() &&
+                      styles.locationChipSelected,
+                  ]}
+                >
+                  <Text
+                    variant="bodyMedium"
+                    style={[
+                      styles.locationChipText,
+                      selectLocation?.id.toString() === item.id.toString() &&
+                        styles.locationChipTextSelected,
+                    ]}
+                  >
+                    {item.location}
+                  </Text>
+                </TouchableOpacity>
+              ))}
             </View>
           ) : (
             <View style={styles.loadingContainer}>
@@ -485,12 +530,12 @@ const SearchUnitCountScreen: React.FC = () => {
             disabled={isLoading}
             loading={isLoading}
             style={styles.searchButton}
+            buttonColor={COLORS.primary}
           >
             조회
           </Button>
         </View>
 
-        {/* Results */}
         <FlatList
           data={result?.results?.data?.[0]?.unit_details?.[0]?.locations || []}
           renderItem={({ item }) => renderLocationItem(item)}
@@ -519,8 +564,15 @@ const SearchUnitCountScreen: React.FC = () => {
         visible={snackbarVisible}
         onDismiss={() => setSnackbarVisible(false)}
         duration={3000}
+        style={styles.snackbar}
+        theme={{ colors: { primary: COLORS.primary } }}
+        action={{
+          label: '확인',
+          labelStyle: { color: COLORS.primary },
+          onPress: () => setSnackbarVisible(false),
+        }}
       >
-        {snackbarMessage}
+        <Text style={styles.snackbarText}>{snackbarMessage}</Text>
       </Snackbar>
     </Surface>
   );
@@ -529,15 +581,37 @@ const SearchUnitCountScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.background,
+  },
+  appbar: {
+    backgroundColor: COLORS.background,
+    elevation: 0,
+    shadowOpacity: 0,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  appbarTitle: {
+    color: COLORS.text,
+    fontWeight: '600',
   },
   content: {
     flex: 1,
-    paddingHorizontal: scale(16),
+    backgroundColor: COLORS.surface,
+    paddingHorizontal: scale(20),
+    paddingTop: verticalScale(6),
+  },
+
+  // Selection Section
+  selectionSection: {
+    marginBottom: verticalScale(6),
   },
   selectionCard: {
-    marginVertical: verticalScale(12),
-    elevation: 2,
+    backgroundColor: COLORS.background,
+    borderRadius: scale(12),
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    paddingHorizontal: scale(16),
+    paddingVertical: verticalScale(16),
   },
   selectionContent: {
     flexDirection: 'row',
@@ -548,158 +622,130 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   selectionTitle: {
-    fontWeight: '700',
-    color: '#333333',
+    fontWeight: '600',
+    color: COLORS.text,
+    fontSize: scale(18),
   },
   selectionSubtitle: {
-    color: '#666666',
+    color: COLORS.textSecondary,
     marginTop: verticalScale(4),
+    fontSize: scale(12),
   },
   selectionPlaceholder: {
-    color: '#333333',
+    color: COLORS.textSecondary,
   },
+
+  // Filter Sections
   filterSection: {
-    borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-    paddingVertical: verticalScale(8),
-    marginVertical: verticalScale(4),
+    backgroundColor: COLORS.background,
+    borderRadius: scale(12),
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    padding: scale(12),
+    marginBottom: verticalScale(6),
+  },
+  sectionTitle: {
+    color: COLORS.text,
+    fontWeight: '600',
+    marginBottom: verticalScale(6),
+    fontSize: scale(14),
   },
   horizontalScroll: {
     paddingHorizontal: scale(4),
   },
-  // Region SegmentedButtons 스타일
-  regionSegmentedButtons: {
-    alignItems: 'stretch',
-    borderRadius: 0,
-    backgroundColor: 'transparent',
-  },
-  regionSegmentButton: {
-    backgroundColor: 'transparent',
-    borderRadius: scale(20),
-    borderColor: 'transparent',
-    marginLeft: scale(6),
-    marginRight: scale(6),
+
+  // Region Selection
+  regionChip: {
+    backgroundColor: COLORS.background,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: scale(16),
     paddingHorizontal: scale(12),
-    paddingVertical: scale(1), // 8/3 ≈ 2.7
-    width: scale(100), // 더 큰 고정 너비
-    borderWidth: 0,
-    borderTopLeftRadius: scale(20),
-    borderTopRightRadius: scale(20),
-    borderBottomLeftRadius: scale(20),
-    borderBottomRightRadius: scale(20),
+    paddingVertical: scale(6),
+    marginRight: scale(8),
+    minWidth: scale(80), // Reduced minimum width
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  regionSelectedSegmentButton: {
-    backgroundColor: '#F47725',
-    borderRadius: scale(20),
-    borderWidth: 0,
-    marginLeft: scale(6),
-    marginRight: scale(6),
-    paddingHorizontal: scale(12),
-    paddingVertical: scale(1), // 8/3 ≈ 2.7
-    width: scale(100), // 더 큰 고정 너비
-    borderTopLeftRadius: scale(20),
-    borderTopRightRadius: scale(20),
-    borderBottomLeftRadius: scale(20),
-    borderBottomRightRadius: scale(20),
+  regionChipSelected: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
   },
-  regionSegmentLabel: {
-    color: '#333333',
-    fontSize: scale(12),
-    textAlign: 'center',
+  regionChipText: {
+    color: COLORS.textSecondary,
     fontWeight: '500',
+    fontSize: scale(13),
   },
-  regionSelectedSegmentLabel: {
-    color: '#FFFFFF',
+  regionChipTextSelected: {
+    color: COLORS.background,
+    fontWeight: '600',
   },
 
-  // Location SegmentedButtons 스타일
-  locationSegmentedButtons: {
-    flexWrap: 'nowrap',
+  // Location Selection
+  locationGrid: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'stretch',
-    width: '100%',
-    borderRadius: 0,
-    backgroundColor: 'transparent',
-  },
-  locationSegmentButton: {
-    backgroundColor: 'transparent',
-    borderRadius: scale(20),
-    borderColor: 'transparent',
-    marginHorizontal: scale(1),
-    marginVertical: scale(1),
-    paddingHorizontal: scale(8),
-    paddingVertical: scale(1),
-    minHeight: scale(40),
-    minWidth: scale(85),
-    borderWidth: 0,
-    borderTopLeftRadius: scale(20),
-    borderTopRightRadius: scale(20),
-    borderBottomLeftRadius: scale(20),
-    borderBottomRightRadius: scale(20),
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  locationSelectedSegmentButton: {
-    backgroundColor: '#F47725',
-    borderRadius: scale(20),
-    borderWidth: 0,
-    marginHorizontal: scale(1),
-    marginVertical: scale(1),
-    paddingHorizontal: scale(8),
-    paddingVertical: scale(1),
-    minHeight: scale(40),
-    minWidth: scale(85),
-    borderTopLeftRadius: scale(20),
-    borderTopRightRadius: scale(20),
-    borderBottomLeftRadius: scale(20),
-    borderBottomRightRadius: scale(20),
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  locationSegmentLabel: {
-    color: '#333333',
-    fontSize: scale(10),
-    textAlign: 'center',
-    lineHeight: scale(12),
-    fontWeight: '500',
     flexWrap: 'wrap',
-    numberOfLines: 2,
+    gap: scale(8),
   },
-  locationSelectedSegmentLabel: {
-    color: '#FFFFFF',
-    fontSize: scale(10),
-    textAlign: 'center',
-    lineHeight: scale(12),
+  locationChip: {
+    backgroundColor: COLORS.background,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: scale(16),
+    paddingHorizontal: scale(12),
+    paddingVertical: scale(6),
+    // marginBottom: scale(0),
+  },
+  locationChipSelected: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  locationChipText: {
+    color: COLORS.textSecondary,
     fontWeight: '500',
-    flexWrap: 'wrap',
-    numberOfLines: 2,
+    fontSize: scale(13),
   },
+  locationChipTextSelected: {
+    color: COLORS.background,
+    fontWeight: '600',
+  },
+
+  // Search Button
   searchButtonContainer: {
-    paddingVertical: verticalScale(12),
+    marginBottom: verticalScale(10),
   },
   searchButton: {
-    backgroundColor: '#F47725',
+    backgroundColor: COLORS.primary,
+    borderRadius: scale(12),
+    paddingVertical: scale(4),
   },
+
+  // Results List
   resultsList: {
-    paddingBottom: verticalScale(20),
+    paddingBottom: verticalScale(10),
   },
   locationItem: {
-    marginVertical: verticalScale(6),
+    marginBottom: verticalScale(8),
   },
   locationCard: {
-    elevation: 1,
+    backgroundColor: COLORS.background,
     borderRadius: scale(12),
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    overflow: 'hidden',
   },
   locationHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(244, 119, 37, 0.1)',
+    justifyContent: 'space-between',
     padding: scale(16),
-    borderTopLeftRadius: scale(12),
-    borderTopRightRadius: scale(12),
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  locationHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
   },
   locationIcon: {
     marginRight: scale(12),
@@ -708,49 +754,96 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   locationName: {
-    fontWeight: '700',
-    color: '#333333',
+    fontWeight: '600',
+    color: COLORS.text,
   },
   locationTeam: {
-    color: '#666666',
+    color: COLORS.textSecondary,
+    marginTop: verticalScale(2),
   },
   statusContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
     padding: scale(16),
-    backgroundColor: '#FFFFFF',
-    borderBottomLeftRadius: scale(12),
-    borderBottomRightRadius: scale(12),
+    backgroundColor: COLORS.background,
   },
-  statusChip: {
-    minWidth: scale(80),
+  statusRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
-  chipText: {
-    color: '#FFFFFF',
-    fontSize: scale(12),
-    fontWeight: '600',
-  },
-  emptyContainer: {
+  statusItem: {
     alignItems: 'center',
-    marginTop: verticalScale(40),
+    flex: 1,
+    paddingVertical: verticalScale(8),
+    borderRadius: scale(8),
+    marginHorizontal: scale(4),
   },
-  emptyText: {
-    color: '#666666',
+  statusSuccess: {
+    backgroundColor: 'rgba(76, 175, 80, 0.1)',
   },
+  statusError: {
+    backgroundColor: 'rgba(244, 67, 54, 0.1)',
+  },
+  statusWarning: {
+    backgroundColor: 'rgba(156, 39, 176, 0.1)',
+  },
+  statusLabel: {
+    color: COLORS.textSecondary,
+    fontWeight: '500',
+    marginBottom: verticalScale(4),
+  },
+  statusValue: {
+    color: COLORS.text,
+    fontWeight: '700',
+  },
+
+  // Loading & Empty States
   loadingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: verticalScale(12),
+    paddingVertical: verticalScale(8),
   },
   loadingText: {
-    color: '#666666',
+    color: COLORS.textSecondary,
     marginLeft: scale(8),
+    fontSize: scale(13),
   },
-  locationButtonContainer: {
-    justifyContent: 'center',
+  emptyContainer: {
+    flex: 1,
     alignItems: 'center',
-    paddingHorizontal: scale(2),
+    justifyContent: 'center',
+    paddingVertical: verticalScale(40),
+  },
+  emptyCard: {
+    backgroundColor: COLORS.background,
+    borderRadius: scale(12),
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    padding: scale(24),
+    alignItems: 'center',
+    maxWidth: scale(280),
+  },
+  emptyIcon: {
+    marginBottom: verticalScale(16),
+  },
+  emptyTitle: {
+    color: COLORS.text,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: verticalScale(8),
+  },
+  emptyText: {
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    lineHeight: scale(20),
+  },
+
+  // Snackbar
+  snackbar: {
+    backgroundColor: COLORS.text,
+    marginBottom: verticalScale(20),
+  },
+  snackbarText: {
+    color: COLORS.background,
   },
 });
 

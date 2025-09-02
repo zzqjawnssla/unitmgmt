@@ -270,10 +270,12 @@ const HomeStackNavigation = () => {
 };
 
 // Intro Stack Navigator
-const IntroStackNavigator = () => {
+const IntroStackNavigator = ({ route }: any) => {
+  const isLoggedOut = route?.params?.isLoggedOut || false;
+  
   return (
     <IntroStack.Navigator
-      initialRouteName="Initialization"
+      initialRouteName={isLoggedOut ? "Login" : "Initialization"}
       screenOptions={{
         headerShown: false,
       }}
@@ -456,9 +458,9 @@ const LoadingScreen = () => (
 
 // Root Stack Navigator
 const RootStackNavigator = () => {
-  const { user, isAuthLoading } = useAuth();
+  const { user, isAuthLoading, isLoggedOut } = useAuth();
 
-  console.log('RootStackNavigator user:', user, 'loading:', isAuthLoading);
+  console.log('RootStackNavigator user:', user, 'loading:', isAuthLoading, 'loggedOut:', isLoggedOut);
 
   // Show loading screen while checking authentication
   if (isAuthLoading) {
@@ -482,7 +484,11 @@ const RootStackNavigator = () => {
           <RootStack.Screen name="BarcodeScanScreen" component={BarcodeScanScreen} />
         </>
       ) : (
-        <RootStack.Screen name="IntroStack" component={IntroStackNavigator} />
+        <RootStack.Screen 
+          name="IntroStack" 
+          component={IntroStackNavigator} 
+          initialParams={{ isLoggedOut }} 
+        />
       )}
     </RootStack.Navigator>
   );

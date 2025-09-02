@@ -11,7 +11,14 @@ import {
   Modal,
 } from 'react-native';
 
-import { List, TextInput, Text, Button, Snackbar, Surface, Appbar } from 'react-native-paper';
+import {
+  TextInput,
+  Text,
+  Button,
+  Snackbar,
+  Surface,
+  Appbar,
+} from 'react-native-paper';
 import { scale, verticalScale } from 'react-native-size-matters';
 
 import { useNavigation } from '@react-navigation/native';
@@ -20,6 +27,19 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../../../store/AuthContext.tsx';
 import { HomeStackParamList } from '../../../navigation/RootStackNavigation.tsx';
 import { useRoute } from '@react-navigation/native';
+
+// KakaoTalk-style colors
+const COLORS = {
+  primary: '#F47725',
+  primaryLight: 'rgba(244, 119, 37, 0.1)',
+  background: '#FFFFFF',
+  surface: '#F9F9F9',
+  text: '#000000',
+  textSecondary: '#666666',
+  textTertiary: '#999999',
+  border: '#E0E0E0',
+  divider: '#F0F0F0',
+};
 
 const BoardTypeList = [
   { id: 1, name: '공지' },
@@ -59,18 +79,24 @@ export const UpdateContentScreen: React.FC = () => {
   useFocusEffect(
     useCallback(() => {
       const onBackPress = () => {
-        setShowModal(true);
-        return true; // 기본 동작 막기
+        if (title || content) {
+          setShowModal(true);
+          return true;
+        }
+        return false;
       };
-      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      const subscription = BackHandler.addEventListener(
+        'hardwareBackPress',
+        onBackPress,
+      );
       return () => subscription?.remove();
-    }, []),
+    }, [title, content]),
   );
 
   // 네비게이션(헤더 뒤로가기 등) 처리
   useEffect(() => {
     const unsubscribe = navigation.addListener('beforeRemove', e => {
-      if (!showModal) {
+      if (!showModal && (title || content)) {
         e.preventDefault();
         setShowModal(true);
       }
@@ -117,91 +143,95 @@ export const UpdateContentScreen: React.FC = () => {
   return (
     <>
       <Surface style={styles.screenContainer}>
-        <Appbar.Header>
-          <Appbar.BackAction onPress={() => navigation.goBack()} />
-          <Appbar.Content title="게시글 수정" />
+        <Appbar.Header style={styles.appbar}>
+          <Appbar.BackAction
+            onPress={() => navigation.goBack()}
+            iconColor={COLORS.text}
+          />
+          <Appbar.Content title="게시글 수정" titleStyle={styles.appbarTitle} />
         </Appbar.Header>
-        
+
         <KeyboardAvoidingView style={styles.container}>
-          <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-            <ScrollView showsVerticalScrollIndicator={false}>
-              <View style={styles.container}>
+          <TouchableWithoutFeedback
+            onPress={Keyboard.dismiss}
+            accessible={false}
+          >
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              style={styles.scrollView}
+              contentContainerStyle={styles.scrollContent}
+            >
+              <View style={styles.formContainer}>
                 <View style={styles.section}>
-                  <Text variant="titleMedium" style={styles.label}>
-                    제목
-                  </Text>
+                  <Text style={styles.label}>제목</Text>
                   <TextInput
                     value={title}
                     onChangeText={text => setTitle(text)}
-                    mode={'outlined'}
-                    returnKeyType={'go'}
+                    mode="outlined"
+                    returnKeyType="go"
                     onSubmitEditing={() => bodyInputRef.current?.focus()}
                     style={styles.textInput}
+                    textColor={COLORS.text}
+                    theme={{
+                      colors: {
+                        primary: COLORS.primary,
+                        outline: COLORS.border,
+                      },
+                    }}
                   />
                 </View>
                 <View style={styles.section}>
-                  <Text variant="titleMedium" style={styles.label}>
-                    게시글 타입
-                  </Text>
-                  <List.AccordionGroup
-                    expandedId={expanded}
-                    onAccordionPress={id =>
-                      setExpanded(id === expanded ? null : id)
-                    }
+                  <Text style={styles.label}>게시글 타입</Text>
+                  <TouchableOpacity
+                    style={styles.typeSelector}
+                    onPress={() => setExpanded(expanded ? null : 'boardType')}
                   >
-                    <List.Accordion
-                      title={
-                        <Text
-                          variant="titleMedium"
-                          style={{
-                            fontWeight: 'bold',
-                            color: 'black',
-                          }}
-                        >
-                          {selectedBoardType.name}
-                        </Text>
-                      }
-                      id="boardType"
-                      style={styles.accordion}
-                    >
+                    <Text style={styles.typeSelectorText}>
+                      {selectedBoardType.name}
+                    </Text>
+                    <Text style={styles.typeSelectorIcon}>
+                      {expanded ? '▲' : '▼'}
+                    </Text>
+                  </TouchableOpacity>
+
+                  {expanded && (
+                    <View style={styles.typeOptions}>
                       {BoardTypeList.map((item, index) => (
-                        <List.Item
+                        <TouchableOpacity
                           key={index}
-                          title={
-                            <Text
-                              variant="titleMedium"
-                              style={{ fontWeight: 'bold' }}
-                            >
-                              {item.name}
-                            </Text>
-                          }
+                          style={styles.typeOption}
                           onPress={() => changeBoardType(item)}
-                        />
+                        >
+                          <Text style={styles.typeOptionText}>{item.name}</Text>
+                        </TouchableOpacity>
                       ))}
-                    </List.Accordion>
-                  </List.AccordionGroup>
+                    </View>
+                  )}
                 </View>
 
-                <View>
-                  <Text variant="titleMedium" style={styles.label}>
-                    내용
-                  </Text>
+                <View style={styles.section}>
+                  <Text style={styles.label}>내용</Text>
                   <TextInput
                     value={content}
                     onChangeText={text => setContent(text)}
-                    returnKeyType={'default'}
+                    returnKeyType="default"
                     multiline={true}
                     style={styles.contentInput}
-                    mode={'outlined'}
+                    mode="outlined"
                     ref={bodyInputRef}
+                    textColor={COLORS.text}
+                    theme={{
+                      colors: {
+                        primary: COLORS.primary,
+                        outline: COLORS.border,
+                      },
+                    }}
                   />
                 </View>
                 <View style={styles.attachmentSection}>
-                  <Text variant="titleMedium" style={styles.label}>
-                    첨부 파일
-                  </Text>
+                  <Text style={styles.label}>첨부 파일</Text>
                   <View style={styles.attachmentBox}>
-                    <Text variant="bodyMedium" style={styles.attachmentText}>
+                    <Text style={styles.attachmentText}>
                       모바일에서는 파일 첨부가 불가능합니다.
                     </Text>
                   </View>
@@ -210,13 +240,19 @@ export const UpdateContentScreen: React.FC = () => {
             </ScrollView>
           </TouchableWithoutFeedback>
           <View style={styles.buttonContainer}>
-            <Button mode="contained" onPress={handleSubmit}>
+            <Button
+              mode="contained"
+              onPress={handleSubmit}
+              style={styles.submitButton}
+              buttonColor={COLORS.primary}
+              labelStyle={styles.submitButtonText}
+            >
               수정 완료
             </Button>
           </View>
         </KeyboardAvoidingView>
       </Surface>
-      
+
       <Modal
         visible={showModal}
         transparent
@@ -226,20 +262,22 @@ export const UpdateContentScreen: React.FC = () => {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.contentHeader}>
-              <Text variant="titleMedium">작성 중인 내용이 있습니다.</Text>
+              <Text style={styles.modalTitle}>작성 중인 내용이 있습니다.</Text>
             </View>
             <View style={styles.contentBody}>
-              <Text variant="bodyMedium">정말 나가시겠습니까?</Text>
+              <Text style={styles.modalText}>정말 나가시겠습니까?</Text>
             </View>
             <View style={styles.contentFooter}>
               <TouchableOpacity
                 onPress={handleCancelLeave}
                 style={styles.modalButton}
               >
-                <Text variant="bodyMedium">취소</Text>
+                <Text style={styles.modalButtonText}>취소</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={handleConfirmLeave}>
-                <Text variant="bodyMedium" style={styles.modalButtonText}>
+                <Text
+                  style={[styles.modalButtonText, styles.modalButtonPrimary]}
+                >
                   나가기
                 </Text>
               </TouchableOpacity>
@@ -252,8 +290,15 @@ export const UpdateContentScreen: React.FC = () => {
         visible={snackbarVisible}
         onDismiss={() => setSnackbarVisible(false)}
         duration={3000}
+        style={styles.snackbar}
+        theme={{ colors: { primary: COLORS.primary } }}
+        action={{
+          label: '확인',
+          labelStyle: { color: COLORS.primary },
+          onPress: () => setSnackbarVisible(false),
+        }}
       >
-        {snackbarMessage}
+        <Text style={styles.snackbarText}>{snackbarMessage}</Text>
       </Snackbar>
     </>
   );
@@ -262,56 +307,118 @@ export const UpdateContentScreen: React.FC = () => {
 const styles = StyleSheet.create({
   screenContainer: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.background,
+  },
+  appbar: {
+    backgroundColor: COLORS.background,
+    elevation: 0,
+    shadowOpacity: 0,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  appbarTitle: {
+    color: COLORS.text,
+    fontWeight: '800',
   },
   container: {
-    marginTop: verticalScale(1),
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+    backgroundColor: COLORS.surface,
+  },
+  scrollContent: {
+    paddingBottom: verticalScale(20),
+  },
+  formContainer: {
+    padding: scale(20),
   },
   section: {
-    marginBottom: verticalScale(2),
+    marginBottom: verticalScale(20),
   },
   label: {
-    marginBottom: verticalScale(1),
-    paddingHorizontal: scale(1),
-    color: 'grey',
-    fontWeight: 'bold',
+    fontSize: scale(16),
+    fontWeight: '600',
+    color: COLORS.text,
+    marginBottom: verticalScale(8),
   },
   textInput: {
-    backgroundColor: 'white',
-    fontSize: scale(2.2),
+    backgroundColor: COLORS.background,
+    fontSize: scale(16),
   },
-  accordion: {
-    backgroundColor: 'white',
-    borderColor: '#000000',
-    borderWidth: 0.5,
-    borderRadius: 5,
-    height: verticalScale(6),
-    marginBottom: verticalScale(0.5),
+  typeSelector: {
+    backgroundColor: COLORS.background,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: scale(8),
+    paddingHorizontal: scale(16),
+    paddingVertical: verticalScale(12),
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  typeSelectorText: {
+    fontSize: scale(16),
+    color: COLORS.text,
+  },
+  typeSelectorIcon: {
+    fontSize: scale(12),
+    color: COLORS.textSecondary,
+  },
+  typeOptions: {
+    backgroundColor: COLORS.background,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: scale(8),
+    marginTop: verticalScale(8),
+    overflow: 'hidden',
+  },
+  typeOption: {
+    paddingHorizontal: scale(16),
+    paddingVertical: verticalScale(12),
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  typeOptionText: {
+    fontSize: scale(16),
+    color: COLORS.text,
   },
   contentInput: {
-    minHeight: verticalScale(40),
-    fontSize: scale(2.2),
-    paddingVertical: verticalScale(1),
-    backgroundColor: 'white',
+    backgroundColor: COLORS.background,
+    fontSize: scale(16),
+    minHeight: verticalScale(120),
+    textAlignVertical: 'top',
   },
   attachmentSection: {
-    marginTop: verticalScale(2),
+    marginTop: verticalScale(10),
   },
   attachmentBox: {
-    backgroundColor: '#f0f0f0',
-    borderColor: 'grey',
+    backgroundColor: COLORS.surface,
+    borderColor: COLORS.border,
     borderWidth: 1,
-    borderRadius: 5,
+    borderRadius: scale(8),
     borderStyle: 'dashed',
-    padding: scale(5),
+    padding: scale(20),
   },
   attachmentText: {
     textAlign: 'center',
-    color: 'grey',
-    fontWeight: 'bold',
+    color: COLORS.textSecondary,
+    fontSize: scale(14),
   },
   buttonContainer: {
-    paddingVertical: verticalScale(2),
+    paddingHorizontal: scale(20),
+    paddingVertical: verticalScale(16),
+    backgroundColor: COLORS.background,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+  submitButton: {
+    backgroundColor: COLORS.primary,
+    borderRadius: scale(8),
+  },
+  submitButtonText: {
+    fontSize: scale(16),
+    fontWeight: '600',
   },
   modalOverlay: {
     flex: 1,
@@ -320,28 +427,50 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
-    width: scale(90),
-    padding: scale(5),
-    backgroundColor: 'white',
-    borderRadius: 10,
+    width: scale(280),
+    padding: scale(24),
+    backgroundColor: COLORS.background,
+    borderRadius: scale(12),
+    marginHorizontal: scale(20),
   },
   contentHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    marginBottom: verticalScale(16),
+  },
+  modalTitle: {
+    fontSize: scale(18),
+    fontWeight: '600',
+    color: COLORS.text,
   },
   contentBody: {
-    marginTop: verticalScale(1),
+    marginBottom: verticalScale(24),
+  },
+  modalText: {
+    fontSize: scale(16),
+    color: COLORS.textSecondary,
   },
   contentFooter: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    marginTop: verticalScale(3),
+    gap: scale(16),
   },
   modalButton: {
-    marginRight: scale(8),
+    paddingHorizontal: scale(16),
+    paddingVertical: verticalScale(8),
   },
   modalButtonText: {
-    fontWeight: 'bold',
+    fontSize: scale(16),
+    fontWeight: '500',
+    color: COLORS.textSecondary,
+  },
+  modalButtonPrimary: {
+    color: COLORS.primary,
+    fontWeight: '600',
+  },
+  snackbar: {
+    backgroundColor: COLORS.text,
+    marginBottom: verticalScale(20),
+  },
+  snackbarText: {
+    color: COLORS.background,
   },
 });

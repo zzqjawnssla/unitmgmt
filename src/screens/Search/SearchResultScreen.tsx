@@ -12,7 +12,7 @@ import {
   useFocusEffect,
   useNavigation,
 } from '@react-navigation/native';
-import { SegmentedButtons, Snackbar, Text, Surface, Appbar } from 'react-native-paper';
+import { Snackbar, Text, Surface, Appbar } from 'react-native-paper';
 import { scale, verticalScale } from 'react-native-size-matters';
 
 import { useAuth } from '../../store/AuthContext.tsx';
@@ -20,12 +20,17 @@ import { api } from '../../services/api/api.tsx';
 import { UnitInfo } from '../../components/Search/UnitInfo.tsx';
 import { UnitHistory } from '../../components/Search/UnitHistory.tsx';
 
-// Brand Colors
-const BRAND_COLORS = {
+// KakaoTalk-style colors
+const COLORS = {
   primary: '#F47725',
-  background: '#FCFCFC',
-  surface: '#FFFFFF',
+  primaryLight: 'rgba(244, 119, 37, 0.1)',
+  background: '#FFFFFF',
+  surface: '#F9F9F9',
+  text: '#000000',
   textSecondary: '#666666',
+  textTertiary: '#999999',
+  border: '#E0E0E0',
+  divider: '#F0F0F0',
 };
 
 type Item = {
@@ -139,19 +144,17 @@ export const SearchResultScreen: React.FC = () => {
   if (isLoading) {
     return (
       <Surface style={styles.container}>
-        <Appbar.Header>
-          <Appbar.BackAction onPress={() => navigation.goBack()} />
-          <Appbar.Content title="검색 결과" />
+        <Appbar.Header style={styles.appbar}>
+          <Appbar.BackAction
+            onPress={() => navigation.goBack()}
+            iconColor={COLORS.text}
+          />
+          <Appbar.Content title="검색 결과" titleStyle={styles.appbarTitle} />
         </Appbar.Header>
-        
+
         <View style={styles.loadingContainer}>
-          <Text
-            variant="headlineMedium"
-            style={{ marginBottom: verticalScale(5) }}
-          >
-            Loading...
-          </Text>
-          <ActivityIndicator size="large" color="black" />
+          <ActivityIndicator size="large" color={COLORS.primary} />
+          <Text style={styles.loadingText}>검색 결과를 불러오는 중...</Text>
         </View>
       </Surface>
     );
@@ -159,51 +162,67 @@ export const SearchResultScreen: React.FC = () => {
 
   return (
     <Surface style={styles.container}>
-      <Appbar.Header>
-        <Appbar.BackAction onPress={() => navigation.goBack()} />
-        <Appbar.Content title="검색 결과" />
-      </Appbar.Header>
-      
-      <View style={styles.content}>
-        <SegmentedButtons
-          value={value}
-          onValueChange={handleChangeValue}
-          buttons={ButtonList.map(buttons => ({
-            value: buttons.value,
-            label: buttons.label,
-            style: {
-              backgroundColor: 'transparent',
-              borderColor:
-                value === buttons.value ? BRAND_COLORS.primary : 'transparent',
-              borderBottomWidth: value === buttons.value ? 3 : 0,
-              borderWidth: 0,
-              marginBottom: verticalScale(16),
-              marginHorizontal: scale(32),
-            },
-            labelStyle: {
-              color: 'black',
-              fontSize: scale(16),
-              paddingTop: verticalScale(8),
-              paddingBottom: verticalScale(1.6),
-            },
-          }))}
-          theme={{ roundness: 0 }}
+      <Appbar.Header style={styles.appbar}>
+        <Appbar.BackAction
+          onPress={() => navigation.goBack()}
+          iconColor={COLORS.text}
         />
-        {value === '1' && result && <UnitInfo result={result.results[0]} />}
-        {value === '2' && result && <UnitHistory result={result.results[0]} />}
-        
-        <Snackbar
-          visible={snackbarVisible}
-          onDismiss={() => setSnackbarVisible(false)}
-          duration={3000}
-          action={{
-            label: '확인',
-            onPress: () => setSnackbarVisible(false),
-          }}
-        >
-          {snackbarMessage}
-        </Snackbar>
+        <Appbar.Content title="검색 결과" titleStyle={styles.appbarTitle} />
+      </Appbar.Header>
+
+      <View style={styles.content}>
+        <View style={styles.segmentedContainer}>
+          {ButtonList.map(button => (
+            <TouchableOpacity
+              key={button.value}
+              style={[
+                styles.segmentButton,
+                value === button.value && styles.segmentButtonActive,
+              ]}
+              onPress={() => handleChangeValue(button.value)}
+            >
+              <Text
+                style={[
+                  styles.segmentButtonText,
+                  value === button.value && styles.segmentButtonTextActive,
+                ]}
+              >
+                {button.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <View style={styles.contentContainer}>
+          {value === '1' && result && (
+            <ScrollView
+              style={styles.scrollView}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.scrollContent}
+            >
+              <UnitInfo result={result.results[0]} />
+            </ScrollView>
+          )}
+          {value === '2' && result && (
+            <UnitHistory result={result.results[0]} />
+          )}
+        </View>
       </View>
+
+      <Snackbar
+        visible={snackbarVisible}
+        onDismiss={() => setSnackbarVisible(false)}
+        duration={3000}
+        style={styles.snackbar}
+        theme={{ colors: { primary: COLORS.primary } }}
+        action={{
+          label: '확인',
+          labelStyle: { color: COLORS.primary },
+          onPress: () => setSnackbarVisible(false),
+        }}
+      >
+        <Text style={styles.snackbarText}>{snackbarMessage}</Text>
+      </Snackbar>
     </Surface>
   );
 };
@@ -211,15 +230,82 @@ export const SearchResultScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: BRAND_COLORS.background,
+    backgroundColor: COLORS.background,
+  },
+  appbar: {
+    backgroundColor: COLORS.background,
+    elevation: 0,
+    shadowOpacity: 0,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  appbarTitle: {
+    color: COLORS.text,
+    fontWeight: '800',
   },
   content: {
     flex: 1,
-    padding: scale(16),
+    backgroundColor: COLORS.surface,
+    paddingBottom: verticalScale(20),
+  },
+  segmentedContainer: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.background,
+    marginHorizontal: scale(20),
+    marginTop: verticalScale(16),
+    marginBottom: verticalScale(5),
+    borderRadius: scale(8),
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    overflow: 'hidden',
+  },
+  segmentButton: {
+    flex: 1,
+    paddingVertical: verticalScale(12),
+    paddingHorizontal: scale(16),
+    backgroundColor: COLORS.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  segmentButtonActive: {
+    backgroundColor: COLORS.primaryLight,
+  },
+  segmentButtonText: {
+    fontSize: scale(16),
+    fontWeight: '500',
+    color: COLORS.textSecondary,
+  },
+  segmentButtonTextActive: {
+    color: COLORS.primary,
+    fontWeight: '600',
+  },
+  contentContainer: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    // paddingHorizontal: scale(20),
+    paddingBottom: verticalScale(20),
+    paddingTop: verticalScale(10),
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: COLORS.surface,
+  },
+  loadingText: {
+    marginTop: verticalScale(16),
+    color: COLORS.textSecondary,
+    fontSize: scale(16),
+  },
+  snackbar: {
+    backgroundColor: COLORS.text,
+    marginBottom: verticalScale(20),
+  },
+  snackbarText: {
+    color: COLORS.background,
   },
 });

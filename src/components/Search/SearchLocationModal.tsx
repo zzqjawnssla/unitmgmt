@@ -24,6 +24,7 @@ const BRAND_COLORS = {
   primary: '#F47725',
   background: '#FCFCFC',
   surface: '#FFFFFF',
+  text: '#000000',
   textSecondary: '#666666',
   light: 'rgba(244, 119, 37, 0.1)',
 };
@@ -331,6 +332,7 @@ export const SearchLocationModal: React.FC<SearchLocationModalProps> = ({
                 returnKeyType="search"
                 onSubmitEditing={handleSearch}
                 style={styles.searchInput}
+                textColor={BRAND_COLORS.text}
                 right={
                   <TextInput.Icon
                     icon="magnify"

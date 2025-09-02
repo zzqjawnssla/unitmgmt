@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>유니트관리시스템 - iOS 앱 설치</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+        
+        .app-icon {
+            width: 120px;
+            height: 120px;
+            border-radius: 22px;
+            margin: 0 auto 30px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+            background: #F47725;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            color: white;
+            font-weight: bold;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+        
+        .version {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+        
+        .install-btn {
+            background: #F47725;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 25px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(244, 119, 37, 0.3);
+        }
+        
+        .install-btn:hover {
+            background: #e6661e;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(244, 119, 37, 0.4);
+        }
+        
+        .install-btn:active {
+            transform: translateY(0);
+        }
+        
+        .info {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            font-size: 14px;
+            color: #666;
+            line-height: 1.5;
+        }
+        
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            margin-top: 20px;
+        }
+        
+        .device-info {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #999;
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                padding: 30px 20px;
+                margin: 10px;
+            }
+            
+            .app-icon {
+                width: 100px;
+                height: 100px;
+                font-size: 40px;
+            }
+            
+            h1 {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="app-icon">유</div>
+        <h1>유니트관리시스템</h1>
+        <div class="version">버전 0.0.3 (Enterprise)</div>
+        
+        <a href="itms-services://?action=download-manifest&url=https://skons-mobile-app-bucket.s3.ap-northeast-2.amazonaws.com/apk/unitmgmt/ios/manifest.plist" 
+           class="install-btn" 
+           id="installBtn">
+            📱 앱 설치하기
+        </a>
+        
+        <div class="info">
+            <strong>📋 1단계: 앱 다운로드</strong><br>
+            1. 위의 "앱 설치하기" 버튼을 탭하세요<br>
+            2. "설치" 확인 대화상자가 나타나면 "설치"를 선택하세요<br>
+            3. 홈 화면에 앱 아이콘이 나타날 때까지 기다리세요
+        </div>
+        
+        <div class="info warning">
+            <strong>🔐 2단계: 개발자 인증서 신뢰 (필수!)</strong><br>
+            앱이 다운로드되었지만 실행되지 않는다면:<br><br>
+            
+            <strong>iPhone/iPad에서:</strong><br>
+            1. <strong>설정</strong> → <strong>일반</strong> → <strong>VPN 및 기기 관리</strong><br>
+            2. <strong>Enterprise 앱</strong> 섹션에서 개발자 찾기<br>
+            3. 개발자 이름을 탭하고 <strong>"신뢰"</strong> 선택<br>
+            4. 확인 팝업에서 <strong>"신뢰"</strong> 다시 선택<br><br>
+            
+            <span style="color: #e74c3c; font-weight: bold;">⚠️ 이 단계를 완료해야만 앱이 실행됩니다!</span>
+        </div>
+        
+        <div class="info">
+            <strong>📱 3단계: 앱 실행</strong><br>
+            인증서 신뢰 완료 후 홈 화면의 앱 아이콘을 탭하여 실행하세요
+        </div>
+        
+        <div class="info warning">
+            <strong>🔧 문제 해결:</strong><br>
+            • <strong>앱 아이콘이 회색으로 표시:</strong> 인증서 신뢰 미완료<br>
+            • <strong>"신뢰할 수 없는 개발자":</strong> 위 2단계 다시 확인<br>
+            • <strong>앱이 삭제됨:</strong> 다운로드부터 다시 시작<br>
+            • <strong>설치 버튼이 동작하지 않음:</strong> Safari 브라우저 사용 확인
+        </div>
+        
+        <div class="device-info" id="deviceInfo">
+            User Agent 확인 중...
+        </div>
+    </div>
+
+    <script>
+        // 디바이스 정보 표시
+        function updateDeviceInfo() {
+            const userAgent = navigator.userAgent;
+            const isIOS = /iPad|iPhone|iPod/.test(userAgent);
+            const isSafari = /Safari/.test(userAgent) && !/Chrome/.test(userAgent);
+            
+            let deviceInfo = '';
+            if (isIOS) {
+                deviceInfo += '✅ iOS 기기 감지됨<br>';
+                if (isSafari) {
+                    deviceInfo += '✅ Safari 브라우저';
+                } else {
+                    deviceInfo += '❌ Safari 브라우저가 아님 (Safari 필요)';
+                }
+            } else {
+                deviceInfo += '❌ iOS 기기가 아님';
+            }
+            
+            document.getElementById('deviceInfo').innerHTML = deviceInfo;
+            
+            // iOS가 아니거나 Safari가 아닌 경우 경고
+            if (!isIOS || !isSafari) {
+                const installBtn = document.getElementById('installBtn');
+                installBtn.style.background = '#ccc';
+                installBtn.style.cursor = 'not-allowed';
+                installBtn.onclick = function(e) {
+                    e.preventDefault();
+                    alert('iOS Safari 브라우저에서만 앱 설치가 가능합니다.');
+                };
+            }
+        }
+        
+        // 설치 버튼 클릭 추적
+        document.getElementById('installBtn').addEventListener('click', function() {
+            console.log('Install button clicked');
+            // 여기에 분석 코드 추가 가능
+        });
+        
+        // 페이지 로드 시 디바이스 정보 업데이트
+        updateDeviceInfo();
+        
+        // 앱 설치 가이드 표시 (iOS에서만)
+        if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+            setTimeout(function() {
+                console.log('iOS device detected - ready for installation');
+            }, 1000);
+        }
+    </script>
+</body>
+</html>

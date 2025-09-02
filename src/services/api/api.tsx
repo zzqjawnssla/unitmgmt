@@ -32,7 +32,7 @@ api.interceptors.response.use(
       try {
         const refreshToken = await AsyncStorage.getItem('refreshToken');
         const response = await axios.post(
-          `${BASE_URL}/accounts/api/token/refresh/`,
+          `${BASE_URL}/accounts/api/v1/accounts/refresh/`,
           {
             refresh: refreshToken,
           },
@@ -49,7 +49,7 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (refreshError) {
         console.log('Refresh token expired or invalid:', refreshError.message);
-        
+
         // 리프레시 토큰도 만료된 경우 로그아웃 처리
         const logout = getGlobalLogout();
         if (logout) {
@@ -58,7 +58,7 @@ api.interceptors.response.use(
         } else {
           console.warn('Global logout function not available');
         }
-        
+
         return Promise.reject(refreshError);
       }
     }

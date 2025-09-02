@@ -9,16 +9,16 @@ import React, {
   useMemo,
 } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {BASE_URL} from '@env';
+import { BASE_URL } from '@env';
 import axios from 'axios';
-import {jwtDecode} from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode';
 import { Snackbar } from 'react-native-paper';
 
 // Snackbar duration constants
 const SNACKBAR_DURATION = {
-  SHORT: 4000,    // 4초 - 일반적인 알림
-  MEDIUM: 7000,   // 7초 - 중요한 알림, 에러 메시지
-  LONG: 10000,    // 10초 - 매우 중요한 에러, 긴 메시지
+  SHORT: 4000, // 4초 - 일반적인 알림
+  MEDIUM: 7000, // 7초 - 중요한 알림, 에러 메시지
+  LONG: 10000, // 10초 - 매우 중요한 에러, 긴 메시지
 } as const;
 
 export type Auth = {
@@ -55,8 +55,8 @@ export type SearchCode = {
 };
 
 export const searchCodeList = [
-  {value: '1', label: 'SKT바코드'},
-  {value: '2', label: '제조사S/N'},
+  { value: '1', label: 'SKT바코드' },
+  { value: '2', label: '제조사S/N' },
 ];
 
 export type AuthContextType = {
@@ -67,6 +67,7 @@ export type AuthContextType = {
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
   initializeAuth: () => Promise<void>;
   isAuthLoading: boolean;
+  isLoggedOut: boolean;
   searchTerm: SearchTerm;
   setSearchTerm: React.Dispatch<React.SetStateAction<SearchTerm>>;
   searchCode: SearchCode;
@@ -78,39 +79,53 @@ const AuthContext = createContext<AuthContextType | null>(null);
 // Global logout function for use outside React components (e.g., axios interceptors)
 let globalLogout: (() => void) | null = null;
 
-export const AuthContextProvider: React.FC<Auth> = ({children}) => {
+export const AuthContextProvider: React.FC<Auth> = ({ children }) => {
   const [user, setUser] = useState<AuthContextType['user']>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [isLoggedOut, setIsLoggedOut] = useState(false);
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
-  const [snackbarDuration, setSnackbarDuration] = useState<number>(SNACKBAR_DURATION.SHORT);
-  
+  const [snackbarDuration, setSnackbarDuration] = useState<number>(
+    SNACKBAR_DURATION.SHORT,
+  );
+
   // Search related states
   const [searchTerm, setSearchTermState] = useState<SearchTerm>({
     sktbarcode: '',
-    serial: ''
+    serial: '',
   });
-  const [searchCode, setSearchCodeState] = useState<SearchCode>(searchCodeList[0]);
+  const [searchCode, setSearchCodeState] = useState<SearchCode>(
+    searchCodeList[0],
+  );
 
   // Memoize setter functions to prevent unnecessary re-renders
-  const setSearchTerm = useCallback((term: SearchTerm | ((prev: SearchTerm) => SearchTerm)) => {
-    setSearchTermState(term);
-  }, []);
+  const setSearchTerm = useCallback(
+    (term: SearchTerm | ((prev: SearchTerm) => SearchTerm)) => {
+      setSearchTermState(term);
+    },
+    [],
+  );
 
-  const setSearchCode = useCallback((code: SearchCode | ((prev: SearchCode) => SearchCode)) => {
-    setSearchCodeState(code);
-  }, []);
-  
-  const showSnackbar = useCallback((message: string, duration: number = SNACKBAR_DURATION.SHORT) => {
-    setSnackbarMessage(message);
-    setSnackbarDuration(duration);
-    setSnackbarVisible(true);
-  }, []);
+  const setSearchCode = useCallback(
+    (code: SearchCode | ((prev: SearchCode) => SearchCode)) => {
+      setSearchCodeState(code);
+    },
+    [],
+  );
+
+  const showSnackbar = useCallback(
+    (message: string, duration: number = SNACKBAR_DURATION.SHORT) => {
+      setSnackbarMessage(message);
+      setSnackbarDuration(duration);
+      setSnackbarVisible(true);
+    },
+    [],
+  );
 
   const refreshUserData = async (): Promise<User> => {
     const access = await AsyncStorage.getItem('accessToken');
     const response = await axios.get(`${BASE_URL}/accounts/aboutme/`, {
-      headers: {Authorization: `Bearer ${access}`},
+      headers: { Authorization: `Bearer ${access}` },
     });
     const updatedUser: User = response.data;
     setUser(updatedUser);
@@ -123,6 +138,7 @@ export const AuthContextProvider: React.FC<Auth> = ({children}) => {
       await AsyncStorage.removeItem('accessToken');
       await AsyncStorage.removeItem('refreshToken');
       setUser(null);
+      setIsLoggedOut(true);
       console.log('User logged out');
     } catch (e) {
       console.log('Logout failed:', e);
@@ -140,22 +156,31 @@ export const AuthContextProvider: React.FC<Auth> = ({children}) => {
   const refreshAccessToken = useCallback(async () => {
     const refresh = await AsyncStorage.getItem('refreshToken');
     if (!refresh) {
-      showSnackbar('토큰이 만료되었습니다. 다시 로그인해주세요.', SNACKBAR_DURATION.MEDIUM);
+      showSnackbar(
+        '토큰이 만료되었습니다. 다시 로그인해주세요.',
+        SNACKBAR_DURATION.MEDIUM,
+      );
       return logout();
     }
     try {
       const refreshResponse = await axios.post(
-        `${BASE_URL}/accounts/api/token/refresh/`,
-        {refresh: refresh},
+        `${BASE_URL}/accounts/api/v1/accounts/refresh/`,
+        { refresh: refresh },
       );
       await AsyncStorage.setItem('accessToken', refreshResponse.data.access);
       return refreshResponse.data.access;
     } catch (e: any) {
       if (e.response && e.response.status === 401) {
-        showSnackbar('토큰이 만료되었습니다. 다시 로그인해주세요.', SNACKBAR_DURATION.MEDIUM);
+        showSnackbar(
+          '토큰이 만료되었습니다. 다시 로그인해주세요.',
+          SNACKBAR_DURATION.MEDIUM,
+        );
         await logout();
       } else {
-        showSnackbar('토큰을 갱신하는 중 오류가 발생했습니다.\n계속하여 오류 발생 시 관리자에게 문의해주세요.', SNACKBAR_DURATION.LONG);
+        showSnackbar(
+          '토큰을 갱신하는 중 오류가 발생했습니다.\n계속하여 오류 발생 시 관리자에게 문의해주세요.',
+          SNACKBAR_DURATION.LONG,
+        );
       }
       throw e;
     }
@@ -167,7 +192,7 @@ export const AuthContextProvider: React.FC<Auth> = ({children}) => {
       setIsAuthLoading(true);
       const latestAccessToken = await AsyncStorage.getItem('accessToken');
       const latestRefreshToken = await AsyncStorage.getItem('refreshToken');
-      
+
       if (!latestAccessToken || !latestRefreshToken) {
         console.log('No tokens found, user needs to login');
         setUser(null);
@@ -177,17 +202,23 @@ export const AuthContextProvider: React.FC<Auth> = ({children}) => {
 
       const tokenExpiration = (jwtDecode(latestAccessToken)?.exp ?? 0) * 1000;
       const currentTime = new Date().getTime();
-      
+
       if (tokenExpiration < currentTime) {
         console.log('access token expired, refreshing...');
         try {
           const newAccessToken = await refreshAccessToken();
-          const userResponse = await axios.get(`${BASE_URL}/accounts/aboutme/`, {
-            headers: {Authorization: `Bearer ${newAccessToken}`},
-          });
+          const userResponse = await axios.get(
+            `${BASE_URL}/accounts/aboutme/`,
+            {
+              headers: { Authorization: `Bearer ${newAccessToken}` },
+            },
+          );
           const userData = userResponse.data;
           setUser(userData);
-          console.log('User authenticated with refreshed token:', userData.username);
+          console.log(
+            'User authenticated with refreshed token:',
+            userData.username,
+          );
         } catch (error) {
           console.log('Failed to refresh token or get user data');
           await logout();
@@ -196,12 +227,18 @@ export const AuthContextProvider: React.FC<Auth> = ({children}) => {
         console.log('access token valid, fetching user data...');
         try {
           const accessToken = await AsyncStorage.getItem('accessToken');
-          const userResponse = await axios.get(`${BASE_URL}/accounts/aboutme/`, {
-            headers: {Authorization: `Bearer ${accessToken}`},
-          });
+          const userResponse = await axios.get(
+            `${BASE_URL}/accounts/aboutme/`,
+            {
+              headers: { Authorization: `Bearer ${accessToken}` },
+            },
+          );
           const userData = userResponse.data;
           setUser(userData);
-          console.log('User authenticated with existing token:', userData.username);
+          console.log(
+            'User authenticated with existing token:',
+            userData.username,
+          );
         } catch (error) {
           console.log('Failed to get user data with existing token');
           await logout();
@@ -230,63 +267,71 @@ export const AuthContextProvider: React.FC<Auth> = ({children}) => {
         },
       );
 
-      const {access_token: access} = authResponse.data;
-      const {refresh_token: refresh} = authResponse.data;
+      const { access_token: access } = authResponse.data;
+      const { refresh_token: refresh } = authResponse.data;
 
       await AsyncStorage.setItem('accessToken', access);
       await AsyncStorage.setItem('refreshToken', refresh);
 
       try {
         const userResponse = await axios.get(`${BASE_URL}/accounts/aboutme/`, {
-          headers: {Authorization: `Bearer ${access}`},
+          headers: { Authorization: `Bearer ${access}` },
         });
 
         const userData = userResponse.data;
         await AsyncStorage.setItem('userData', JSON.stringify(userData));
 
         setUser(userData);
+        setIsLoggedOut(false); // 로그인 성공 시 로그아웃 상태 해제
       } catch (e) {
         console.log('UserData Error', e);
         showSnackbar('사용자 정보 불러오기 실패', SNACKBAR_DURATION.MEDIUM);
       }
     } catch (e) {
       console.log('Login Error', e);
-      showSnackbar('로그인 실패\n아이디와 비밀번호를 확인해주세요.', SNACKBAR_DURATION.MEDIUM);
+      showSnackbar(
+        '로그인 실패\n아이디와 비밀번호를 확인해주세요.',
+        SNACKBAR_DURATION.MEDIUM,
+      );
     }
   };
 
-
-  const contextValue = useMemo(() => ({
-    user, 
-    setUser, 
-    login, 
-    logout, 
-    refreshUserData, 
-    initializeAuth, 
-    isAuthLoading,
-    searchTerm,
-    setSearchTerm,
-    searchCode,
-    setSearchCode
-  }), [
-    user, 
-    login, 
-    logout, 
-    refreshUserData, 
-    initializeAuth, 
-    isAuthLoading,
-    searchTerm,
-    setSearchTerm,
-    searchCode,
-    setSearchCode
-  ]);
+  const contextValue = useMemo(
+    () => ({
+      user,
+      setUser,
+      login,
+      logout,
+      refreshUserData,
+      initializeAuth,
+      isAuthLoading,
+      isLoggedOut,
+      searchTerm,
+      setSearchTerm,
+      searchCode,
+      setSearchCode,
+    }),
+    [
+      user,
+      login,
+      logout,
+      refreshUserData,
+      initializeAuth,
+      isAuthLoading,
+      isLoggedOut,
+      searchTerm,
+      setSearchTerm,
+      searchCode,
+      setSearchCode,
+    ],
+  );
 
   return (
     <>
       <AuthContext.Provider value={contextValue}>
         {children}
       </AuthContext.Provider>
-      
+
       <Snackbar
         visible={snackbarVisible}
         onDismiss={() => setSnackbarVisible(false)}

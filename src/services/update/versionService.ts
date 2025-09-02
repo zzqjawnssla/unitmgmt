@@ -11,7 +11,8 @@ export interface VersionInfo {
   releaseNotes: string;
   releaseDate: string;
   isForceUpdate?: boolean;
-  manifestUrl?: string; // iOS 전용
+  manifestUrl?: string; // iOS 전용 - manifest.plist URL
+  installUrl?: string; // iOS 전용 - itms-services:// URL
   bundleId?: string; // iOS 전용
 }
 

@@ -62,21 +62,41 @@ gradleContent = gradleContent.replace(
 
 fs.writeFileSync(gradlePath, gradleContent);
 
-// iOS Info.plist 업데이트 (선택사항)
+// iOS project.pbxproj 업데이트 (직접 버전 설정)
+const pbxprojPath = path.join(__dirname, '..', '..', 'ios', 'unitmgmt.xcodeproj', 'project.pbxproj');
+if (fs.existsSync(pbxprojPath)) {
+  let pbxprojContent = fs.readFileSync(pbxprojPath, 'utf8');
+  
+  // MARKETING_VERSION 업데이트 (모든 occurrence)
+  pbxprojContent = pbxprojContent.replace(
+    /MARKETING_VERSION = [\d.]+;/g,
+    `MARKETING_VERSION = ${newVersion};`
+  );
+  
+  // CURRENT_PROJECT_VERSION 업데이트 (모든 occurrence)  
+  pbxprojContent = pbxprojContent.replace(
+    /CURRENT_PROJECT_VERSION = \d+;/g,
+    `CURRENT_PROJECT_VERSION = ${newVersionCode};`
+  );
+  
+  fs.writeFileSync(pbxprojPath, pbxprojContent);
+  console.log(`📱 iOS project.pbxproj updated: ${newVersion} (${newVersionCode})`);
+}
+
+// iOS Info.plist 업데이트 (fallback, Xcode 변수 방식)
 const infoPlistPath = path.join(__dirname, '..', '..', 'ios', 'unitmgmt', 'Info.plist');
 if (fs.existsSync(infoPlistPath)) {
   let plistContent = fs.readFileSync(infoPlistPath, 'utf8');
   
-  // CFBundleShortVersionString 업데이트
+  // 하드코딩된 버전이 있다면 Xcode 변수로 변경
   plistContent = plistContent.replace(
     /<key>CFBundleShortVersionString<\/key>\s*<string>[\d.]+<\/string>/,
-    `<key>CFBundleShortVersionString</key>\n\t<string>${newVersion}</string>`
+    `<key>CFBundleShortVersionString</key>\n\t<string>$(MARKETING_VERSION)</string>`
   );
   
-  // CFBundleVersion 업데이트
   plistContent = plistContent.replace(
     /<key>CFBundleVersion<\/key>\s*<string>\d+<\/string>/,
-    `<key>CFBundleVersion</key>\n\t<string>${newVersionCode}</string>`
+    `<key>CFBundleVersion</key>\n\t<string>$(CURRENT_PROJECT_VERSION)</string>`
   );
   
   fs.writeFileSync(infoPlistPath, plistContent);

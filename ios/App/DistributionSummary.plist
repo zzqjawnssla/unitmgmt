@@ -10,7 +10,7 @@
 				<string>arm64</string>
 			</array>
 			<key>buildNumber</key>
-			<string>1</string>
+			<string>5</string>
 			<key>certificate</key>
 			<dict>
 				<key>SHA1</key>
@@ -54,7 +54,7 @@
 			<key>entitlements</key>
 			<dict>
 				<key>application-identifier</key>
-				<string>6424KNQSXK.sko.com.unitmgmt</string>
+				<string>6424KNQSXK.com.sko.unitmgmt</string>
 				<key>com.apple.developer.team-identifier</key>
 				<string>6424KNQSXK</string>
 				<key>get-task-allow</key>
@@ -65,11 +65,11 @@
 			<key>profile</key>
 			<dict>
 				<key>UUID</key>
-				<string>699827df-7c54-4d13-9da2-6449b21e4b81</string>
+				<string>e7f9ae3b-d269-433f-bf29-fc583c88bc59</string>
 				<key>dateExpires</key>
 				<string>9/1/26</string>
 				<key>name</key>
-				<string>iOS Team Inhouse Provisioning Profile: sko.com.unitmgmt</string>
+				<string>iOS Team Inhouse Provisioning Profile: com.sko.unitmgmt</string>
 			</dict>
 			<key>team</key>
 			<dict>
@@ -79,7 +79,7 @@
 				<string>SK ons Co., Ltd</string>
 			</dict>
 			<key>versionNumber</key>
-			<string>1.0</string>
+			<string>0.0.5</string>
 		</dict>
 	</array>
 </dict>

@@ -178,6 +178,8 @@ export const LoginScreen: React.FC = () => {
                       onChangeText={handleChange('username')}
                       underlineColor={BRAND_COLORS.border}
                       activeUnderlineColor={BRAND_COLORS.primary}
+                      textColor={BRAND_COLORS.text}
+                      contentStyle={styles.textInputContent}
                       autoCapitalize="none"
                       autoComplete="username"
                       left={
@@ -204,6 +206,8 @@ export const LoginScreen: React.FC = () => {
                       value={values.password}
                       underlineColor={BRAND_COLORS.border}
                       activeUnderlineColor={BRAND_COLORS.primary}
+                      textColor={BRAND_COLORS.text}
+                      contentStyle={styles.textInputContent}
                       autoCapitalize="none"
                       autoComplete="password"
                       secureTextEntry={!isPasswordVisible}
@@ -248,14 +252,14 @@ export const LoginScreen: React.FC = () => {
             /* Two-Factor Authentication */
             <View style={styles.formContainer}>
               <View style={styles.twoFactorHeader}>
-                <MaterialCommunityIcons
-                  name="shield-check"
-                  size={32}
-                  color={BRAND_COLORS.primary}
-                />
-                <Text variant="headlineSmall" style={styles.formTitle}>
-                  2단계 인증
-                </Text>
+                {/*<MaterialCommunityIcons*/}
+                {/*  name="shield-check"*/}
+                {/*  size={32}*/}
+                {/*  color={BRAND_COLORS.primary}*/}
+                {/*/>*/}
+                {/*<Text variant="headlineSmall" style={styles.formTitle}>*/}
+                {/*  2단계 인증*/}
+                {/*</Text>*/}
                 <Text variant="bodyMedium" style={styles.twoFactorSubtitle}>
                   SMS로 전송된 인증번호를 입력해주세요
                 </Text>
@@ -270,9 +274,11 @@ export const LoginScreen: React.FC = () => {
                   onChangeText={setCode}
                   underlineColor={BRAND_COLORS.border}
                   activeUnderlineColor={BRAND_COLORS.primary}
+                  textColor={BRAND_COLORS.text}
                   maxLength={6}
                   keyboardType="numeric"
                   textAlign="center"
+                  contentStyle={styles.authCodeInputContent}
                 />
 
                 <View style={styles.timerContainer}>
@@ -380,6 +386,9 @@ const styles = StyleSheet.create({
   textInput: {
     backgroundColor: BRAND_COLORS.background,
   },
+  textInputContent: {
+    color: BRAND_COLORS.text,
+  },
   errorFieldText: {
     color: BRAND_COLORS.error,
     marginTop: verticalScale(4),
@@ -417,6 +426,10 @@ const styles = StyleSheet.create({
     backgroundColor: BRAND_COLORS.background,
     fontSize: moderateScale(18),
     fontWeight: '600',
+  },
+  authCodeInputContent: {
+    textAlign: 'center',
+    color: BRAND_COLORS.text,
   },
   timerContainer: {
     flexDirection: 'row',

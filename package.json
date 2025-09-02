@@ -1,6 +1,6 @@
 {
   "name": "unitmgmt",
-  "version": "0.0.3",
+  "version": "0.0.6",
   "private": true,
   "scripts": {
     "android": "react-native run-android",
@@ -13,6 +13,7 @@
     "deploy:minor": "bash scripts/release-and-deploy.sh minor",
     "deploy:major": "bash scripts/release-and-deploy.sh major",
     "upload:only": "bash scripts/upload-only.sh",
+    "ios:upload:only": "bash scripts/ios-upload-only.sh",
     "validate:aws": "bash scripts/validate-aws-setup.sh"
   },
   "dependencies": {

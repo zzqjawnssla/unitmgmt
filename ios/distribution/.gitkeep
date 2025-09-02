@@ -1,0 +1,5 @@
+# iOS 배포용 디렉토리
+# Enterprise In-House 배포를 위한 파일들이 저장됩니다:
+# - unitmgmt_v{version}.ipa (복사된 IPA 파일)
+# - manifest.plist (Enterprise 배포용 manifest)
+# - app-icon-57.png, app-icon-512.png (아이콘 파일들)

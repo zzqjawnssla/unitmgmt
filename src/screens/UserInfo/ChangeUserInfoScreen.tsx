@@ -10,7 +10,12 @@ import {
   Snackbar,
   ActivityIndicator,
 } from 'react-native-paper';
-import { useNavigation, NavigationProp, useFocusEffect } from '@react-navigation/native';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import {
+  useNavigation,
+  NavigationProp,
+  useFocusEffect,
+} from '@react-navigation/native';
 import { useAuth } from '../../store/AuthContext.tsx';
 import { scale, verticalScale } from 'react-native-size-matters';
 import { useQuery } from '@tanstack/react-query';
@@ -18,6 +23,21 @@ import { getWarehouseList, changeWarehouse } from '../../services/api/api.tsx';
 import type { RootStackParamList } from '../../navigation/RootStackNavigation.tsx';
 
 type ChangeUserInfoScreenNavigationProp = NavigationProp<RootStackParamList>;
+
+// KakaoTalk-style colors
+const COLORS = {
+  primary: '#F47725',
+  primaryLight: 'rgba(244, 119, 37, 0.1)',
+  background: '#FFFFFF',
+  surface: '#F7F7F7',
+  text: '#000000',
+  textSecondary: '#666666',
+  textTertiary: '#999999',
+  border: '#E6E6E6',
+  success: '#4CAF50',
+  warning: '#FF9500',
+  error: '#F44336',
+};
 
 interface WarehouseItem {
   id: string | number;
@@ -33,8 +53,10 @@ const ChangeUserInfoScreen: React.FC = () => {
     label: string;
     value: string | number;
   }>({ label: '', value: '' });
-  
-  const [warehouseExpanded, setWarehouseExpanded] = useState<string | null>(null);
+
+  const [warehouseExpanded, setWarehouseExpanded] = useState<string | null>(
+    null,
+  );
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -48,7 +70,8 @@ const ChangeUserInfoScreen: React.FC = () => {
 
   // 사용자 지역에 맞는 창고만 필터링
   const filteredWarehouseList = warehouseList?.results?.filter(
-    (warehouse: WarehouseItem) => warehouse.warehouse_manage_region === user?.region
+    (warehouse: WarehouseItem) =>
+      warehouse.warehouse_manage_region === user?.region,
   );
 
   const listData = filteredWarehouseList?.map((warehouse: WarehouseItem) => ({
@@ -56,7 +79,10 @@ const ChangeUserInfoScreen: React.FC = () => {
     value: warehouse.id,
   }));
 
-  const handleChangeWarehouse = (item: { label: string; value: string | number }) => {
+  const handleChangeWarehouse = (item: {
+    label: string;
+    value: string | number;
+  }) => {
     setSelectedWarehouse(item);
     setWarehouseExpanded(null);
   };
@@ -69,14 +95,18 @@ const ChangeUserInfoScreen: React.FC = () => {
   // 초기값 설정
   useFocusEffect(
     useCallback(() => {
-      if (user?.my_warehouse && Array.isArray(user.my_warehouse) && user.my_warehouse.length > 0) {
+      if (
+        user?.my_warehouse &&
+        Array.isArray(user.my_warehouse) &&
+        user.my_warehouse.length > 0
+      ) {
         const warehouse = user.my_warehouse[0];
         setSelectedWarehouse({
           label: warehouse.warehouse_name || '',
           value: warehouse.id || '',
         });
       }
-    }, [user?.my_warehouse])
+    }, [user?.my_warehouse]),
   );
 
   const handleConfirm = async () => {
@@ -90,7 +120,7 @@ const ChangeUserInfoScreen: React.FC = () => {
       await changeWarehouse(selectedWarehouse.value.toString());
       showSnackbar('변경사항을 저장하는데 성공하였습니다.');
       await refreshUserData();
-      
+
       // 잠시 후 뒤로가기
       setTimeout(() => {
         navigation.goBack();
@@ -105,18 +135,35 @@ const ChangeUserInfoScreen: React.FC = () => {
 
   return (
     <Surface style={styles.container}>
-      <Appbar.Header>
-        <Appbar.BackAction onPress={() => navigation.goBack()} />
-        <Appbar.Content title="사용자 정보 변경" />
+      <Appbar.Header style={styles.appbar}>
+        <Appbar.BackAction
+          onPress={() => navigation.goBack()}
+          color={COLORS.text}
+        />
+        <Appbar.Content
+          title="사용자 정보 변경"
+          titleStyle={styles.appbarTitle}
+        />
       </Appbar.Header>
 
       <ScrollView style={styles.content}>
+        <View style={styles.headerSection}>
+          <MaterialCommunityIcons
+            name="warehouse"
+            size={scale(24)}
+            color={COLORS.primary}
+            style={styles.headerIcon}
+          />
+          <Text variant="headlineSmall" style={styles.headerTitle}>
+            창고 변경
+          </Text>
+          <Text variant="bodyMedium" style={styles.headerSubtitle}>
+            현재 담당 창고를 변경할 수 있습니다
+          </Text>
+        </View>
+
         <Card style={styles.card}>
           <Card.Content>
-            <Text variant="titleMedium" style={styles.sectionTitle}>
-              창고 변경
-            </Text>
-            
             <List.Section style={styles.listSection}>
               <List.AccordionGroup
                 expandedId={warehouseExpanded}
@@ -129,6 +176,13 @@ const ChangeUserInfoScreen: React.FC = () => {
                   titleStyle={styles.accordionTitle}
                   id="1"
                   style={styles.accordion}
+                  left={props => (
+                    <List.Icon
+                      {...props}
+                      icon="warehouse"
+                      color={COLORS.primary}
+                    />
+                  )}
                   onPress={() =>
                     setWarehouseExpanded(warehouseExpanded === '1' ? null : '1')
                   }
@@ -139,11 +193,39 @@ const ChangeUserInfoScreen: React.FC = () => {
                       title={item.label}
                       onPress={() => handleChangeWarehouse(item)}
                       titleStyle={styles.listItemTitle}
+                      left={props => (
+                        <List.Icon
+                          {...props}
+                          icon="domain"
+                          color={COLORS.textSecondary}
+                        />
+                      )}
+                      right={
+                        selectedWarehouse?.value === item.value
+                          ? props => (
+                              <List.Icon
+                                {...props}
+                                icon="check"
+                                color={COLORS.primary}
+                              />
+                            )
+                          : undefined
+                      }
                     />
                   )) || (
                     <List.Item
                       title="선택 가능한 창고가 없습니다"
-                      titleStyle={[styles.listItemTitle, { color: '#999' }]}
+                      titleStyle={[
+                        styles.listItemTitle,
+                        { color: COLORS.textTertiary },
+                      ]}
+                      left={props => (
+                        <List.Icon
+                          {...props}
+                          icon="alert-circle"
+                          color={COLORS.warning}
+                        />
+                      )}
                       disabled
                     />
                   )}
@@ -151,9 +233,17 @@ const ChangeUserInfoScreen: React.FC = () => {
               </List.AccordionGroup>
             </List.Section>
 
-            <Text variant="bodySmall" style={styles.warningText}>
-              선택 가능한 창고가 없을 경우 관리자에게 문의해주세요.
-            </Text>
+            <View style={styles.infoBox}>
+              <MaterialCommunityIcons
+                name="information"
+                size={scale(16)}
+                color={COLORS.primary}
+                style={styles.infoIcon}
+              />
+              <Text variant="bodySmall" style={styles.infoText}>
+                선택 가능한 창고가 없을 경우 관리자에게 문의해주세요.
+              </Text>
+            </View>
           </Card.Content>
         </Card>
       </ScrollView>
@@ -165,6 +255,8 @@ const ChangeUserInfoScreen: React.FC = () => {
           disabled={isLoading || !selectedWarehouse.value}
           loading={isLoading}
           style={styles.confirmButton}
+          labelStyle={styles.buttonLabel}
+          icon="check"
         >
           적용
         </Button>
@@ -174,8 +266,14 @@ const ChangeUserInfoScreen: React.FC = () => {
         visible={snackbarVisible}
         onDismiss={() => setSnackbarVisible(false)}
         duration={3000}
+        style={styles.snackbar}
+        action={{
+          label: '확인',
+          onPress: () => setSnackbarVisible(false),
+          textColor: COLORS.primary,
+        }}
       >
-        {snackbarMessage}
+        <Text style={styles.snackbarText}>{snackbarMessage}</Text>
       </Snackbar>
     </Surface>
   );
@@ -184,45 +282,125 @@ const ChangeUserInfoScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.background,
+  },
+  appbar: {
+    backgroundColor: COLORS.background,
+    elevation: 0,
+    shadowOpacity: 0,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  appbarTitle: {
+    color: COLORS.text,
+    fontWeight: '800',
   },
   content: {
     flex: 1,
-    paddingHorizontal: scale(16),
-    paddingTop: verticalScale(16),
+    backgroundColor: COLORS.surface,
+  },
+  headerSection: {
+    backgroundColor: COLORS.background,
+    paddingHorizontal: scale(20),
+    paddingTop: verticalScale(24),
+    paddingBottom: verticalScale(20),
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  headerIcon: {
+    marginBottom: verticalScale(12),
+  },
+  headerTitle: {
+    color: COLORS.text,
+    fontWeight: '700',
+    marginBottom: verticalScale(8),
+    textAlign: 'center',
+  },
+  headerSubtitle: {
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
   },
   card: {
+    margin: scale(16),
     elevation: 2,
-  },
-  sectionTitle: {
-    color: '#333333',
-    fontWeight: '700',
-    marginBottom: verticalScale(16),
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    borderRadius: scale(12),
+    backgroundColor: COLORS.background,
   },
   listSection: {
     paddingHorizontal: 0,
-    marginBottom: verticalScale(12),
+    marginBottom: verticalScale(16),
   },
   accordion: {
-    backgroundColor: '#F5F5F5',
+    backgroundColor: COLORS.surface,
     borderRadius: scale(8),
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   accordionTitle: {
-    color: '#333333',
+    color: COLORS.text,
+    fontWeight: '600',
   },
   listItemTitle: {
-    color: '#333333',
+    color: COLORS.text,
+    fontWeight: '500',
   },
-  warningText: {
-    color: '#E53E3E',
-    fontStyle: 'italic',
+  infoBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.primaryLight,
+    padding: scale(12),
+    borderRadius: scale(8),
+    marginTop: verticalScale(8),
+  },
+  infoIcon: {
+    marginRight: scale(8),
+  },
+  infoText: {
+    color: COLORS.textSecondary,
+    flex: 1,
+    lineHeight: 18,
   },
   buttonContainer: {
-    padding: scale(16),
+    padding: scale(20),
     paddingBottom: verticalScale(32),
+    backgroundColor: COLORS.background,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
   },
   confirmButton: {
-    backgroundColor: '#F47725',
+    backgroundColor: COLORS.primary,
+    // borderRadius: scale(25),
+    // elevation: 2,
+    shadowColor: COLORS.primary,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+  },
+  buttonLabel: {
+    color: COLORS.background,
+    fontWeight: '600',
+    fontSize: scale(16),
+  },
+  snackbar: {
+    backgroundColor: COLORS.text,
+    marginBottom: verticalScale(20),
+    borderRadius: scale(8),
+  },
+  snackbarText: {
+    color: COLORS.background,
+    fontWeight: '500',
   },
 });
 

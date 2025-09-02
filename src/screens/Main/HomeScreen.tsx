@@ -6,7 +6,7 @@ import {
   View,
   StyleSheet,
 } from 'react-native';
-import { Surface, Text, Card, useTheme, Appbar } from 'react-native-paper';
+import { Surface, Text, useTheme, Appbar } from 'react-native-paper';
 import { useAuth } from '../../store/AuthContext.tsx';
 import { scale, verticalScale } from 'react-native-size-matters';
 import { useFocusEffect } from '@react-navigation/native';
@@ -21,12 +21,26 @@ import type { RootStackParamList } from '../../navigation/RootStackNavigation.ts
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
+// KakaoTalk-style colors
+const COLORS = {
+  primary: '#F47725',
+  primaryLight: 'rgba(244, 119, 37, 0.1)',
+  background: '#FFFFFF',
+  surface: '#F7F7F7',
+  text: '#000000',
+  textSecondary: '#666666',
+  textTertiary: '#999999',
+  border: '#E6E6E6',
+  divider: '#F0F0F0',
+};
+
 const HomeScreen: React.FC = () => {
   const theme = useTheme();
   const { user, logout } = useAuth();
   const navigation = useNavigation<HomeScreenNavigationProp>();
+  const [isFocused, setIsFocused] = useState(false);
 
-  // Use custom hook to fetch myUnitList data with real-time updates
+  // Use custom hook to fetch myUnitList data with real-time updates only when focused
   const {
     data: myUnitList,
     isLoading,
@@ -35,7 +49,7 @@ const HomeScreen: React.FC = () => {
     5, // location - 현장대기
     user?.user_id || 0, // userId - 로그인한 사용자 ID
     !!user, // enabled
-    true, // realTimeMode - 30초마다 자동 업데이트
+    isFocused, // realTimeMode - 화면이 포커스되었을 때만 30초마다 자동 업데이트
   );
 
   // Use React Query for board data
@@ -52,13 +66,13 @@ const HomeScreen: React.FC = () => {
 
   const goToMyUnitListScreen = () => {
     navigation.navigate('UserinfoStack', {
-      screen: 'MyUnitListScreen'
+      screen: 'MyUnitListScreen',
     });
   };
 
   const goToMailBoxScreen = () => {
     navigation.navigate('UserinfoStack', {
-      screen: 'MailBoxScreen'
+      screen: 'MailBoxScreen',
     });
   };
 
@@ -114,11 +128,11 @@ const HomeScreen: React.FC = () => {
     });
   };
 
-  // No need to manually fetch data - React Query handles it automatically
-
-  // Block hardware back button
+  // Handle focus state and block hardware back button
   useFocusEffect(
     useCallback(() => {
+      setIsFocused(true);
+      
       const onBackPress = () => {
         return true; // Block back button on Android and iOS
       };
@@ -127,254 +141,147 @@ const HomeScreen: React.FC = () => {
         'hardwareBackPress',
         onBackPress,
       );
-      return () => subscription?.remove();
+      
+      return () => {
+        setIsFocused(false);
+        subscription?.remove();
+      };
     }, []),
   );
 
-  // React Query automatically handles data fetching - no need for manual useFocusEffect
-
   const renderUserInfo = () => (
-    <View style={styles.sectionContainer}>
-      <Text variant="headlineMedium" style={styles.greeting}>
-        {user?.first_name || '사용자'}님, 안녕하세요!
-      </Text>
+    <View style={styles.userSection}>
+      <View style={styles.userGreeting}>
+        <View style={styles.greetingRow}>
+          <Text variant="headlineMedium" style={styles.greetingText}>
+            {user?.first_name || '사용자'}님
+          </Text>
+          <Text variant="bodyMedium" style={styles.greetingSubtext}>
+            안녕하세요!
+          </Text>
+        </View>
+      </View>
 
-      <View style={styles.cardRow}>
+      <View style={styles.timestampContainer}>
+        <Icon
+          name="clock-outline"
+          size={scale(14)}
+          color={COLORS.textTertiary}
+          style={styles.timestampIcon}
+        />
+        <Text
+          variant="bodySmall"
+          style={styles.timestampText}
+          numberOfLines={1}
+        >
+          {moment().format('YYYY.MM.DD HH:mm')}
+        </Text>
+        {isFetching && !isLoading && (
+          <ActivityIndicator
+            size={scale(14)}
+            color={COLORS.primary}
+            style={styles.loadingIndicator}
+          />
+        )}
+      </View>
+
+      <View style={styles.statsRow}>
         <TouchableOpacity
           onPress={goToMyUnitListScreen}
-          style={[styles.infoCard, { borderColor: theme.colors.primary }]}
+          style={styles.statItem}
         >
-          <View style={styles.cardHeader}>
-            <Text
-              variant="titleMedium"
-              style={[styles.cardTitle, { color: theme.colors.primary }]}
-            >
-              보유 유니트
-            </Text>
-            {isFetching && !isLoading && (
-              <ActivityIndicator
-                size={16}
-                color={theme.colors.primary}
-                style={styles.updateIndicator}
-              />
-            )}
-          </View>
+          {/*<View style={styles.statHeader}>*/}
+          <Text variant="bodySmall" style={styles.statLabel}>
+            보유 유니트
+          </Text>
           {isLoading ? (
-            <ActivityIndicator size="large" color={theme.colors.primary} />
+            <ActivityIndicator size="small" color={COLORS.primary} />
           ) : (
-            <Text variant="headlineLarge" style={styles.cardValue}>
-              {myUnitList?.count || 0} 개
+            <Text variant="headlineLarge" style={styles.statValue}>
+              {myUnitList?.count || 0}
             </Text>
           )}
+          <Text variant="bodySmall" style={styles.statUnit}>
+            개
+          </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          onPress={goToMailBoxScreen}
-          style={[styles.infoCard, { borderColor: theme.colors.primary }]}
-        >
-          <Text
-            variant="titleMedium"
-            style={[styles.cardTitle, { color: theme.colors.primary }]}
-          >
+        <View style={styles.statSeparator} />
+
+        <TouchableOpacity onPress={goToMailBoxScreen} style={styles.statItem}>
+          <Text variant="bodySmall" style={styles.statLabel}>
             결재 대기
           </Text>
-          <Text variant="headlineLarge" style={styles.cardValue}>
-            0 건
+          <Text variant="headlineLarge" style={styles.statValue}>
+            0
+          </Text>
+          <Text variant="bodySmall" style={styles.statUnit}>
+            건
           </Text>
         </TouchableOpacity>
       </View>
     </View>
   );
 
-  const renderCommunity = () => (
-    <View style={styles.sectionContainer}>
-      <View style={styles.sectionHeader}>
-        <View style={styles.headerLeft}>
-          <Icon
-            name="account-question"
-            size={24}
-            color={theme.colors.primary}
-            style={styles.headerIcon}
-          />
-          <Text
-            variant="titleLarge"
-            style={[styles.sectionTitle, { color: theme.colors.primary }]}
-          >
-            Q&A
-          </Text>
-        </View>
-        <TouchableOpacity onPress={goToFAQScreen}>
-          <MaterialIcons
-            name="more-horiz"
-            size={24}
-            color={theme.colors.onSurface}
-          />
-        </TouchableOpacity>
-      </View>
-
-      {qnaList.length === 0 ? (
-        <Card style={styles.emptyCard}>
-          <Card.Content>
-            <Text variant="bodyMedium" style={styles.emptyText}>
-              등록된 게시글이 없습니다.
+  const renderBoardSection = (
+    title: string,
+    icon: string,
+    list: any[],
+    onMorePress: () => void,
+    onItemPress: (docId: string) => void,
+  ) => (
+    <View style={styles.boardSection}>
+      <View style={styles.boardHeader}>
+        <View style={styles.boardHeaderContent}>
+          <View style={styles.boardHeaderLeft}>
+            <Icon
+              name={icon}
+              size={scale(20)}
+              color={COLORS.primary}
+              style={styles.boardIcon}
+            />
+            <Text variant="titleMedium" style={styles.boardTitle}>
+              {title}
             </Text>
-          </Card.Content>
-        </Card>
-      ) : (
-        qnaList.map((item: any, index) => (
-          <TouchableOpacity
-            key={index}
-            onPress={() => goToFAQContentScreen(item.docId)}
-          >
-            <Card style={styles.contentCard}>
-              <Card.Content>
-                <View style={styles.contentRow}>
-                  <Text
-                    variant="bodyLarge"
-                    style={styles.contentTitle}
-                    numberOfLines={1}
-                  >
-                    {item?.title}
-                  </Text>
-                  <Text variant="bodySmall" style={styles.contentDate}>
-                    {formattedData(item?.created_at)}
-                  </Text>
-                </View>
-              </Card.Content>
-            </Card>
+          </View>
+          <TouchableOpacity onPress={onMorePress}>
+            <MaterialIcons
+              name="more-horiz"
+              size={scale(20)}
+              color={COLORS.textSecondary}
+            />
           </TouchableOpacity>
-        ))
-      )}
-    </View>
-  );
-
-  const renderInsight = () => (
-    <View style={styles.sectionContainer}>
-      <View style={styles.sectionHeader}>
-        <View style={styles.headerLeft}>
-          <Icon
-            name="note-search-outline"
-            size={24}
-            color={theme.colors.primary}
-            style={styles.headerIcon}
-          />
-          <Text
-            variant="titleLarge"
-            style={[styles.sectionTitle, { color: theme.colors.primary }]}
-          >
-            사례 공유
-          </Text>
         </View>
-        <TouchableOpacity onPress={goToInsightScreen}>
-          <MaterialIcons
-            name="more-horiz"
-            size={24}
-            color={theme.colors.onSurface}
-          />
-        </TouchableOpacity>
       </View>
 
-      {insightList.length === 0 ? (
-        <Card style={styles.emptyCard}>
-          <Card.Content>
-            <Text variant="bodyMedium" style={styles.emptyText}>
-              등록된 게시글이 없습니다.
-            </Text>
-          </Card.Content>
-        </Card>
-      ) : (
-        insightList.map((item: any, index) => (
-          <TouchableOpacity
-            key={index}
-            onPress={() =>
-              navigation.navigate('HomeStack', {
-                screen: 'DetailContentScreen',
-                params: {
-                  boardType: 'insight',
-                  postId: item.docId || item.id,
-                  title: '사례 공유 상세',
-                },
-              })
-            }
-          >
-            <Card style={styles.contentCard}>
-              <Card.Content>
-                <View style={styles.contentRow}>
-                  <Text
-                    variant="bodyLarge"
-                    style={styles.contentTitle}
-                    numberOfLines={1}
-                  >
-                    {item?.title}
-                  </Text>
-                  <Text variant="bodySmall" style={styles.contentDate}>
-                    {formattedData(item?.created_at)}
-                  </Text>
-                </View>
-              </Card.Content>
-            </Card>
-          </TouchableOpacity>
-        ))
-      )}
-    </View>
-  );
-
-  const renderNotice = () => (
-    <View style={styles.sectionContainer}>
-      <View style={styles.sectionHeader}>
-        <View style={styles.headerLeft}>
-          <MaterialIcons
-            name="announcement"
-            size={24}
-            color={theme.colors.primary}
-            style={styles.headerIcon}
-          />
-          <Text
-            variant="titleLarge"
-            style={[styles.sectionTitle, { color: theme.colors.primary }]}
-          >
-            공지사항
+      {list.length === 0 ? (
+        <View style={styles.emptyItem}>
+          <Text variant="bodyMedium" style={styles.emptyText}>
+            등록된 게시글이 없습니다.
           </Text>
         </View>
-        <TouchableOpacity onPress={goToNoticeScreen}>
-          <MaterialIcons
-            name="more-horiz"
-            size={24}
-            color={theme.colors.onSurface}
-          />
-        </TouchableOpacity>
-      </View>
-
-      {noticeList.length === 0 ? (
-        <Card style={styles.emptyCard}>
-          <Card.Content>
-            <Text variant="bodyMedium" style={styles.emptyText}>
-              등록된 게시글이 없습니다.
-            </Text>
-          </Card.Content>
-        </Card>
       ) : (
-        noticeList.map((item: any, index) => (
+        list.slice(0, 3).map((item: any, index) => (
           <TouchableOpacity
             key={index}
-            onPress={() => goToNoticeContentScreen(item?.docId)}
+            onPress={() => onItemPress(item.docId)}
+            style={[
+              styles.boardItem,
+              index === list.slice(0, 3).length - 1 && styles.boardItemLast,
+            ]}
           >
-            <Card style={styles.contentCard}>
-              <Card.Content>
-                <View style={styles.contentRow}>
-                  <Text
-                    variant="bodyLarge"
-                    style={styles.contentTitle}
-                    numberOfLines={1}
-                  >
-                    {item?.title}
-                  </Text>
-                  <Text variant="bodySmall" style={styles.contentDate}>
-                    {formattedData(item?.created_at)}
-                  </Text>
-                </View>
-              </Card.Content>
-            </Card>
+            <View style={styles.boardItemContent}>
+              <Text
+                variant="bodyLarge"
+                style={styles.boardItemTitle}
+                numberOfLines={1}
+              >
+                {item?.title}
+              </Text>
+              <Text variant="bodySmall" style={styles.boardItemDate}>
+                {formattedData(item?.created_at)}
+              </Text>
+            </View>
           </TouchableOpacity>
         ))
       )}
@@ -383,15 +290,10 @@ const HomeScreen: React.FC = () => {
 
   return (
     <Surface style={styles.container}>
-      <Appbar.Header>
-        <Appbar.Content title="단위 관리 시스템" />
-        <Appbar.Action icon="bell-outline" onPress={() => {}} />
-        <Appbar.Action
-          icon="logout"
-          onPress={() => {
-            console.log('Logout pressed - clearing userData and tokens');
-            logout();
-          }}
+      <Appbar.Header style={styles.appbar}>
+        <Appbar.Content
+          title="유니트 관리시스템"
+          titleStyle={styles.appbarTitle}
         />
       </Appbar.Header>
 
@@ -401,9 +303,38 @@ const HomeScreen: React.FC = () => {
         contentContainerStyle={styles.scrollContent}
       >
         {renderUserInfo()}
-        {renderCommunity()}
-        {renderInsight()}
-        {renderNotice()}
+
+        {renderBoardSection(
+          'Q&A',
+          'help-circle-outline',
+          qnaList,
+          goToFAQScreen,
+          goToFAQContentScreen,
+        )}
+
+        {renderBoardSection(
+          '사례 공유',
+          'lightbulb-outline',
+          insightList,
+          goToInsightScreen,
+          docId =>
+            navigation.navigate('HomeStack', {
+              screen: 'DetailContentScreen',
+              params: {
+                boardType: 'insight',
+                postId: docId,
+                title: '사례 공유 상세',
+              },
+            }),
+        )}
+
+        {renderBoardSection(
+          '공지사항',
+          'bullhorn',
+          noticeList,
+          goToNoticeScreen,
+          goToNoticeContentScreen,
+        )}
       </ScrollView>
     </Surface>
   );
@@ -412,91 +343,161 @@ const HomeScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.background,
+  },
+  appbar: {
+    backgroundColor: COLORS.background,
+    elevation: 0,
+    shadowOpacity: 0,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  appbarTitle: {
+    color: COLORS.text,
+    fontWeight: '800',
+    textAlign: 'center',
   },
   scrollView: {
     flex: 1,
+    backgroundColor: COLORS.surface,
   },
   scrollContent: {
-    paddingHorizontal: scale(16),
-    paddingVertical: verticalScale(16),
+    paddingBottom: verticalScale(20),
   },
-  sectionContainer: {
-    marginBottom: verticalScale(24),
+
+  // User Info Section
+  userSection: {
+    backgroundColor: COLORS.background,
+    paddingHorizontal: scale(20),
+    paddingVertical: verticalScale(20),
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
   },
-  greeting: {
+  userGreeting: {
+    marginBottom: verticalScale(20),
+  },
+  greetingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: scale(8),
+  },
+  greetingText: {
+    color: COLORS.text,
     fontWeight: '700',
-    color: '#505050',
+  },
+  greetingSubtext: {
+    paddingTop: verticalScale(10),
+    color: COLORS.textSecondary,
+    fontWeight: '700',
+  },
+  timestampContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: verticalScale(16),
   },
-  cardRow: {
-    flexDirection: 'row',
-    gap: scale(12),
+  timestampIcon: {
+    marginRight: scale(4),
   },
-  infoCard: {
+  timestampText: {
+    color: COLORS.textTertiary,
+    fontSize: scale(12),
+    fontWeight: '500',
+    minWidth: scale(100),
+    textAlign: 'left',
+  },
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  statItem: {
     flex: 1,
-    backgroundColor: 'white',
-    borderWidth: 2,
-    borderRadius: scale(10),
-    padding: scale(16),
-    minHeight: verticalScale(80),
-    justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  cardHeader: {
+  statSeparator: {
+    width: 1,
+    height: verticalScale(40),
+    backgroundColor: COLORS.border,
+    marginHorizontal: scale(20),
+  },
+  statHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: verticalScale(8),
   },
-  cardTitle: {
-    fontWeight: '700',
+  statLabel: {
+    color: COLORS.textSecondary,
   },
-  updateIndicator: {
+  loadingIndicator: {
     marginLeft: scale(4),
   },
-  cardValue: {
+  statValue: {
+    color: COLORS.primary,
     fontWeight: '700',
-    textAlign: 'right',
-    color: '#000000',
   },
-  sectionHeader: {
+  statUnit: {
+    color: COLORS.textTertiary,
+    marginTop: verticalScale(4),
+  },
+
+  // Board Sections
+  boardSection: {
+    marginTop: verticalScale(8),
+  },
+  boardHeader: {
+    backgroundColor: COLORS.background,
+    paddingHorizontal: scale(20),
+    paddingVertical: verticalScale(10),
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  boardHeaderContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: verticalScale(12),
   },
-  headerLeft: {
+  boardHeaderLeft: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  headerIcon: {
+  boardIcon: {
     marginRight: scale(8),
   },
-  sectionTitle: {
-    fontWeight: '700',
+  boardTitle: {
+    color: COLORS.primary,
+    fontWeight: '600',
   },
-  emptyCard: {
-    marginBottom: verticalScale(8),
+  boardItem: {
+    backgroundColor: COLORS.background,
+    paddingHorizontal: scale(20),
+    paddingVertical: verticalScale(16),
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
   },
-  emptyText: {
-    textAlign: 'center',
-    color: '#666666',
+  boardItemLast: {
+    borderBottomWidth: 0,
   },
-  contentCard: {
-    marginBottom: verticalScale(8),
-  },
-  contentRow: {
+  boardItemContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  contentTitle: {
+  boardItemTitle: {
     flex: 1,
-    marginRight: scale(12),
+    color: COLORS.text,
+    marginRight: scale(16),
   },
-  contentDate: {
-    color: '#999999',
-    fontSize: scale(12),
+  boardItemDate: {
+    color: COLORS.textTertiary,
+  },
+  emptyItem: {
+    backgroundColor: COLORS.background,
+    paddingHorizontal: scale(20),
+    paddingVertical: verticalScale(24),
+  },
+  emptyText: {
+    color: COLORS.textSecondary,
+    textAlign: 'center',
   },
 });
 

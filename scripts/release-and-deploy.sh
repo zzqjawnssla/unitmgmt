@@ -166,7 +166,7 @@ if [ "$SKIP_BUILD" = false ]; then
     
     if [ "$DRY_RUN" = true ]; then
         echo -e "${CYAN}[DRY RUN] Would build APK...${NC}"
-        APK_FILE="android/app/unitmgmt-v${NEW_VERSION}-release.apk"
+        APK_FILE="android/app/unitmgmt-v${NEW_VERSION}.apk"
         APK_SIZE_BYTES=50000000  # 가상 크기
     else
         # Clean previous builds
@@ -184,7 +184,7 @@ if [ "$SKIP_BUILD" = false ]; then
             # Find and copy APK
             BUILT_APK=$(find app/build/outputs/apk/release -name "*.apk" | head -1)
             if [ -n "$BUILT_APK" ]; then
-                FINAL_APK_NAME="unitmgmt-v${NEW_VERSION}-release.apk"
+                FINAL_APK_NAME="unitmgmt-v${NEW_VERSION}.apk"
                 cp "$BUILT_APK" "app/$FINAL_APK_NAME"
                 APK_FILE="android/app/$FINAL_APK_NAME"
                 APK_SIZE_BYTES=$(stat -f%z "$BUILT_APK" 2>/dev/null || stat -c%s "$BUILT_APK" 2>/dev/null)
@@ -202,7 +202,7 @@ if [ "$SKIP_BUILD" = false ]; then
     fi
 else
     echo -e "\n${YELLOW}⏭ Skipping build step${NC}"
-    APK_FILE="android/app/unitmgmt-v${NEW_VERSION}-release.apk"
+    APK_FILE="android/app/unitmgmt-v${NEW_VERSION}.apk"
     if [ -f "$APK_FILE" ]; then
         APK_SIZE_BYTES=$(stat -f%z "$APK_FILE" 2>/dev/null || stat -c%s "$APK_FILE" 2>/dev/null)
     else
@@ -216,7 +216,7 @@ if [ "$SKIP_UPLOAD" = false ]; then
     echo -e "\n${BLUE}Step 3: Upload to S3${NC}"
     echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     
-    S3_KEY="${AWS_S3_PREFIX}/unitmgmt-v${NEW_VERSION}-release.apk"
+    S3_KEY="${AWS_S3_PREFIX}/unitmgmt-v${NEW_VERSION}.apk"
     S3_URL="https://${AWS_S3_BUCKET}.s3.${AWS_REGION}.amazonaws.com/${S3_KEY}"
     
     if [ "$DRY_RUN" = true ]; then
@@ -246,7 +246,7 @@ if [ "$SKIP_UPLOAD" = false ]; then
     fi
 else
     echo -e "\n${YELLOW}⏭ Skipping upload step${NC}"
-    S3_KEY="${AWS_S3_PREFIX}/unitmgmt-v${NEW_VERSION}-release.apk"
+    S3_KEY="${AWS_S3_PREFIX}/unitmgmt-v${NEW_VERSION}.apk"
     S3_URL="https://${AWS_S3_BUCKET}.s3.${AWS_REGION}.amazonaws.com/${S3_KEY}"
 fi
 
