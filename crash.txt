@@ -1,0 +1,79 @@
+--------- beginning of crash
+09-08 15:04:10.154 15053 15053 E AndroidRuntime: FATAL EXCEPTION: main
+09-08 15:04:10.154 15053 15053 E AndroidRuntime: Process: com.unitmgmt, PID: 15053
+09-08 15:04:10.154 15053 15053 E AndroidRuntime: java.lang.ExceptionInInitializerError
+09-08 15:04:10.154 15053 15053 E AndroidRuntime: 	at com.facebook.react.internal.featureflags.ReactNativeFeatureFlagsCxxAccessor.override(ReactNativeFeatureFlagsCxxAccessor.kt:615)
+09-08 15:04:10.154 15053 15053 E AndroidRuntime: 	at com.facebook.react.internal.featureflags.ReactNativeFeatureFlags.override(ReactNativeFeatureFlags.kt:402)
+09-08 15:04:10.154 15053 15053 E AndroidRuntime: 	at com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.load(DefaultNewArchitectureEntryPoint.kt:97)
+09-08 15:04:10.154 15053 15053 E AndroidRuntime: 	at com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.load(DefaultNewArchitectureEntryPoint.kt:43)
+09-08 15:04:10.154 15053 15053 E AndroidRuntime: 	at com.unitmgmt.MainApplication.onCreate(MainApplication.kt:40)
+09-08 15:04:10.154 15053 15053 E AndroidRuntime: 	at android.app.Instrumentation.callApplicationOnCreate(Instrumentation.java:1381)
+09-08 15:04:10.154 15053 15053 E AndroidRuntime: 	at android.app.ActivityThread.handleBindApplication(ActivityThread.java:7830)
+09-08 15:04:10.154 15053 15053 E AndroidRuntime: 	at android.app.ActivityThread.-$$Nest$mhandleBindApplication(Unknown Source:0)
+09-08 15:04:10.154 15053 15053 E AndroidRuntime: 	at android.app.ActivityThread$H.handleMessage(ActivityThread.java:2546)
+09-08 15:04:10.154 15053 15053 E AndroidRuntime: 	at android.os.Handler.dispatchMessage(Handler.java:110)
+09-08 15:04:10.154 15053 15053 E AndroidRuntime: 	at android.os.Looper.loopOnce(Looper.java:248)
+09-08 15:04:10.154 15053 15053 E AndroidRuntime: 	at android.os.Looper.loop(Looper.java:338)
+09-08 15:04:10.154 15053 15053 E AndroidRuntime: 	at android.app.ActivityThread.main(ActivityThread.java:9067)
+09-08 15:04:10.154 15053 15053 E AndroidRuntime: 	at java.lang.reflect.Method.invoke(Native Method)
+09-08 15:04:10.154 15053 15053 E AndroidRuntime: 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:593)
+09-08 15:04:10.154 15053 15053 E AndroidRuntime: 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:932)
+09-08 15:04:10.154 15053 15053 E AndroidRuntime: Caused by: java.lang.IllegalStateException: SoLoader.init() not yet called
+09-08 15:04:10.154 15053 15053 E AndroidRuntime: 	at com.facebook.soloader.SoLoader.assertInitialized(SoLoader.java:1273)
+09-08 15:04:10.154 15053 15053 E AndroidRuntime: 	at com.facebook.soloader.SoLoader.loadLibraryOnNonAndroid(SoLoader.java:880)
+09-08 15:04:10.154 15053 15053 E AndroidRuntime: 	at com.facebook.soloader.SoLoader.loadLibrary(SoLoader.java:825)
+09-08 15:04:10.154 15053 15053 E AndroidRuntime: 	at com.facebook.soloader.SoLoader.loadLibrary(SoLoader.java:812)
+09-08 15:04:10.154 15053 15053 E AndroidRuntime: 	at com.facebook.react.internal.featureflags.ReactNativeFeatureFlagsCxxInterop.<clinit>(ReactNativeFeatureFlagsCxxInterop.kt:28)
+09-08 15:04:10.154 15053 15053 E AndroidRuntime: 	... 16 more
+09-08 15:04:21.766 15083 15083 E AndroidRuntime: FATAL EXCEPTION: main
+09-08 15:04:21.766 15083 15083 E AndroidRuntime: Process: com.unitmgmt, PID: 15083
+09-08 15:04:21.766 15083 15083 E AndroidRuntime: java.lang.ExceptionInInitializerError
+09-08 15:04:21.766 15083 15083 E AndroidRuntime: 	at com.facebook.react.internal.featureflags.ReactNativeFeatureFlagsCxxAccessor.override(ReactNativeFeatureFlagsCxxAccessor.kt:615)
+09-08 15:04:21.766 15083 15083 E AndroidRuntime: 	at com.facebook.react.internal.featureflags.ReactNativeFeatureFlags.override(ReactNativeFeatureFlags.kt:402)
+09-08 15:04:21.766 15083 15083 E AndroidRuntime: 	at com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.load(DefaultNewArchitectureEntryPoint.kt:97)
+09-08 15:04:21.766 15083 15083 E AndroidRuntime: 	at com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.load(DefaultNewArchitectureEntryPoint.kt:43)
+09-08 15:04:21.766 15083 15083 E AndroidRuntime: 	at com.unitmgmt.MainApplication.onCreate(MainApplication.kt:40)
+09-08 15:04:21.766 15083 15083 E AndroidRuntime: 	at android.app.Instrumentation.callApplicationOnCreate(Instrumentation.java:1381)
+09-08 15:04:21.766 15083 15083 E AndroidRuntime: 	at android.app.ActivityThread.handleBindApplication(ActivityThread.java:7830)
+09-08 15:04:21.766 15083 15083 E AndroidRuntime: 	at android.app.ActivityThread.-$$Nest$mhandleBindApplication(Unknown Source:0)
+09-08 15:04:21.766 15083 15083 E AndroidRuntime: 	at android.app.ActivityThread$H.handleMessage(ActivityThread.java:2546)
+09-08 15:04:21.766 15083 15083 E AndroidRuntime: 	at android.os.Handler.dispatchMessage(Handler.java:110)
+09-08 15:04:21.766 15083 15083 E AndroidRuntime: 	at android.os.Looper.loopOnce(Looper.java:248)
+09-08 15:04:21.766 15083 15083 E AndroidRuntime: 	at android.os.Looper.loop(Looper.java:338)
+09-08 15:04:21.766 15083 15083 E AndroidRuntime: 	at android.app.ActivityThread.main(ActivityThread.java:9067)
+09-08 15:04:21.766 15083 15083 E AndroidRuntime: 	at java.lang.reflect.Method.invoke(Native Method)
+09-08 15:04:21.766 15083 15083 E AndroidRuntime: 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:593)
+09-08 15:04:21.766 15083 15083 E AndroidRuntime: 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:932)
+09-08 15:04:21.766 15083 15083 E AndroidRuntime: Caused by: java.lang.IllegalStateException: SoLoader.init() not yet called
+09-08 15:04:21.766 15083 15083 E AndroidRuntime: 	at com.facebook.soloader.SoLoader.assertInitialized(SoLoader.java:1273)
+09-08 15:04:21.766 15083 15083 E AndroidRuntime: 	at com.facebook.soloader.SoLoader.loadLibraryOnNonAndroid(SoLoader.java:880)
+09-08 15:04:21.766 15083 15083 E AndroidRuntime: 	at com.facebook.soloader.SoLoader.loadLibrary(SoLoader.java:825)
+09-08 15:04:21.766 15083 15083 E AndroidRuntime: 	at com.facebook.soloader.SoLoader.loadLibrary(SoLoader.java:812)
+09-08 15:04:21.766 15083 15083 E AndroidRuntime: 	at com.facebook.react.internal.featureflags.ReactNativeFeatureFlagsCxxInterop.<clinit>(ReactNativeFeatureFlagsCxxInterop.kt:28)
+09-08 15:04:21.766 15083 15083 E AndroidRuntime: 	... 16 more
+09-08 15:04:35.560 15114 15114 E AndroidRuntime: FATAL EXCEPTION: main
+09-08 15:04:35.560 15114 15114 E AndroidRuntime: Process: com.unitmgmt, PID: 15114
+09-08 15:04:35.560 15114 15114 E AndroidRuntime: java.lang.ExceptionInInitializerError
+09-08 15:04:35.560 15114 15114 E AndroidRuntime: 	at com.facebook.react.internal.featureflags.ReactNativeFeatureFlagsCxxAccessor.override(ReactNativeFeatureFlagsCxxAccessor.kt:615)
+09-08 15:04:35.560 15114 15114 E AndroidRuntime: 	at com.facebook.react.internal.featureflags.ReactNativeFeatureFlags.override(ReactNativeFeatureFlags.kt:402)
+09-08 15:04:35.560 15114 15114 E AndroidRuntime: 	at com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.load(DefaultNewArchitectureEntryPoint.kt:97)
+09-08 15:04:35.560 15114 15114 E AndroidRuntime: 	at com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.load(DefaultNewArchitectureEntryPoint.kt:43)
+09-08 15:04:35.560 15114 15114 E AndroidRuntime: 	at com.unitmgmt.MainApplication.onCreate(MainApplication.kt:40)
+09-08 15:04:35.560 15114 15114 E AndroidRuntime: 	at android.app.Instrumentation.callApplicationOnCreate(Instrumentation.java:1381)
+09-08 15:04:35.560 15114 15114 E AndroidRuntime: 	at android.app.ActivityThread.handleBindApplication(ActivityThread.java:7830)
+09-08 15:04:35.560 15114 15114 E AndroidRuntime: 	at android.app.ActivityThread.-$$Nest$mhandleBindApplication(Unknown Source:0)
+09-08 15:04:35.560 15114 15114 E AndroidRuntime: 	at android.app.ActivityThread$H.handleMessage(ActivityThread.java:2546)
+09-08 15:04:35.560 15114 15114 E AndroidRuntime: 	at android.os.Handler.dispatchMessage(Handler.java:110)
+09-08 15:04:35.560 15114 15114 E AndroidRuntime: 	at android.os.Looper.loopOnce(Looper.java:248)
+09-08 15:04:35.560 15114 15114 E AndroidRuntime: 	at android.os.Looper.loop(Looper.java:338)
+09-08 15:04:35.560 15114 15114 E AndroidRuntime: 	at android.app.ActivityThread.main(ActivityThread.java:9067)
+09-08 15:04:35.560 15114 15114 E AndroidRuntime: 	at java.lang.reflect.Method.invoke(Native Method)
+09-08 15:04:35.560 15114 15114 E AndroidRuntime: 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:593)
+09-08 15:04:35.560 15114 15114 E AndroidRuntime: 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:932)
+09-08 15:04:35.560 15114 15114 E AndroidRuntime: Caused by: java.lang.IllegalStateException: SoLoader.init() not yet called
+09-08 15:04:35.560 15114 15114 E AndroidRuntime: 	at com.facebook.soloader.SoLoader.assertInitialized(SoLoader.java:1273)
+09-08 15:04:35.560 15114 15114 E AndroidRuntime: 	at com.facebook.soloader.SoLoader.loadLibraryOnNonAndroid(SoLoader.java:880)
+09-08 15:04:35.560 15114 15114 E AndroidRuntime: 	at com.facebook.soloader.SoLoader.loadLibrary(SoLoader.java:825)
+09-08 15:04:35.560 15114 15114 E AndroidRuntime: 	at com.facebook.soloader.SoLoader.loadLibrary(SoLoader.java:812)
+09-08 15:04:35.560 15114 15114 E AndroidRuntime: 	at com.facebook.react.internal.featureflags.ReactNativeFeatureFlagsCxxInterop.<clinit>(ReactNativeFeatureFlagsCxxInterop.kt:28)
+09-08 15:04:35.560 15114 15114 E AndroidRuntime: 	... 16 more

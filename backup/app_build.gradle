@@ -57,6 +57,8 @@ react {
     autolinkLibrariesWithApp()
 }
 
+
+
 /**
  * Set this to true to Run Proguard on Release builds to minify the Java bytecode.
  */
@@ -85,8 +87,8 @@ android {
         applicationId "com.unitmgmt"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 7
-        versionName "0.0.7"
+        versionCode 6
+        versionName "0.0.6"
         ndk {
             abiFilters "armeabi-v7a", "x86", "arm64-v8a", "x86_64"
         }
@@ -99,7 +101,7 @@ android {
             keyPassword 'android'
         }
     }
-    
+
     // Release keystore 설정을 미리 준비
     def keystorePropertiesFile = file('keystore.properties')
     println "Checking keystore file: ${keystorePropertiesFile.absolutePath}"
@@ -107,7 +109,7 @@ android {
     if (keystorePropertiesFile.exists()) {
         def keystoreProperties = new Properties()
         keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
-        
+
         signingConfigs {
             release {
                 storeFile file(keystoreProperties['storeFile'])
@@ -154,3 +156,116 @@ dependencies {
         implementation jscFlavor
     }
 }
+
+
+
+
+
+////
+//
+// apply plugin: "com.android.application"
+// apply plugin: "org.jetbrains.kotlin.android"
+// apply plugin: "com.facebook.react"
+//
+// // React Native Vector Icons
+// apply from: "../../node_modules/react-native-vector-icons/fonts.gradle"
+//
+// react {
+//   autolinkLibrariesWithApp()
+// }
+//
+// def enableProguardInReleaseBuilds = true
+// def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
+//
+// android {
+//   ndkVersion rootProject.ext.ndkVersion
+//   buildToolsVersion rootProject.ext.buildToolsVersion
+//   compileSdk rootProject.ext.compileSdkVersion
+//
+//   namespace "com.unitmgmt"
+//
+//   defaultConfig {
+//     applicationId "com.unitmgmt"
+//     minSdkVersion rootProject.ext.minSdkVersion
+//     targetSdkVersion rootProject.ext.targetSdkVersion
+//     versionCode 6
+//     versionName "0.0.6"
+//
+//     // ✅ NDK 하드닝 관련: 공격면 축소(가능하면 arm64 단일 ABI) + 심볼 보존
+//     ndk {
+//       abiFilters "arm64-v8a"           // ← 필요 시만 다른 ABI 추가
+//       debugSymbolLevel "FULL"          // 릴리즈 심볼은 번들로 보존(Play Console 크래시 분석)
+//     }
+//   }
+//
+//   signingConfigs {
+//     debug {
+//       storeFile file('debug.keystore')
+//       storePassword 'android'
+//       keyAlias 'androiddebugkey'
+//       keyPassword 'android'
+//     }
+//   }
+//
+//   // Release keystore 설정 로드
+//   def keystorePropertiesFile = file('keystore.properties')
+//   println "Checking keystore file: ${keystorePropertiesFile.absolutePath}"
+//   println "File exists: ${keystorePropertiesFile.exists()}"
+//   if (keystorePropertiesFile.exists()) {
+//     def keystoreProperties = new Properties()
+//     keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+//     signingConfigs {
+//       release {
+//         storeFile file(keystoreProperties['storeFile'])
+//         storePassword keystoreProperties['storePassword']
+//         keyAlias keystoreProperties['keyAlias']
+//         keyPassword keystoreProperties['keyPassword']
+//       }
+//     }
+//   }
+//
+//   buildTypes {
+//     debug {
+//       signingConfig signingConfigs.debug
+//     }
+//     release {
+//       if (keystorePropertiesFile.exists()) {
+//         signingConfig signingConfigs.release
+//       } else {
+//         throw new GradleException("Release keystore not found! Please configure android/keystore.properties for production builds")
+//       }
+//       // ✅ FORTIFY가 잘 작동하도록 릴리즈 최적화/축소 유지
+//       minifyEnabled enableProguardInReleaseBuilds
+//       shrinkResources true
+//       proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
+//     }
+//   }
+//
+//   buildFeatures {
+//     prefab true       // NDK 의존 라이브러리(prefab) 사용 시
+//   }
+//
+//   // ✅ CMake 연결: src/main/cpp/CMakeLists.txt (하드닝 옵션 포함)
+//   externalNativeBuild {
+//     cmake {
+//       path file("src/main/cpp/CMakeLists.txt")
+//       // version "3.22.1" // 필요 시 명시
+//     }
+//   }
+//
+//   // ✅ 패키징 정책: modern jni 패키징 + libc++_shared 충돌 예방
+//   packagingOptions {
+//     jniLibs { useLegacyPackaging false }
+//     pickFirst "**/libc++_shared.so"
+//   }
+// }
+//
+// dependencies {
+//   implementation("com.facebook.react:react-android")
+//
+//   if (hermesEnabled.toBoolean()) {
+//     implementation("com.facebook.react:hermes-android")
+//   } else {
+//     implementation jscFlavor
+//   }
+// }
