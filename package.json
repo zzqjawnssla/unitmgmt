@@ -40,10 +40,10 @@
     "react-native-permissions": "^5.4.2",
     "react-native-safe-area-context": "^5.5.2",
     "react-native-screens": "^4.15.4",
+    "react-native-screenshot-prevent": "^1.2.1",
     "react-native-size-matters": "^0.4.2",
     "react-native-vector-icons": "^10.3.0",
     "react-native-vision-camera": "^4.7.1",
-    "recoil": "^0.7.7",
     "yup": "^1.7.0"
   },
   "devDependencies": {

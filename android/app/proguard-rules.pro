@@ -23,6 +23,14 @@
 -keep class com.swmansion.reanimated.** { *; }
 -keep class com.facebook.react.turbomodule.** { *; }
 
+# React Native Device Info (보안 정보 접근)
+-keep class com.learnium.RNDeviceInfo.** { *; }
+-keepclassmembers class com.learnium.RNDeviceInfo.** { *; }
+
+# React Native Permissions (보안 권한 관리)
+-keep class com.zoontek.rnpermissions.** { *; }
+-keepclassmembers class com.zoontek.rnpermissions.** { *; }
+
 # React Native SVG
 -keep class com.horcrux.svg.** { *; }
 
@@ -117,26 +125,87 @@
 # 크래시 리포트를 위한 라인 번호 보존
 -keepattributes SourceFile,LineNumberTable
 
-# ===== 로그 제거 규칙 (보안 강화) =====
-# Android 시스템 로그 제거 (MobSF 보안 진단 대응)
+# ===== App Safer 호환성을 위한 보안 설정 =====
+# App Safer 검증에 필요한 클래스들 보호
+-keep class com.naver.** { *; }
+-keep class kr.co.shiftworks.** { *; }
+
+# 디바이스 보안 모듈 보호 (jail-monkey)
+-keep class com.gantix.JailMonkey.** { *; }
+-keepclassmembers class com.gantix.JailMonkey.** { *; }
+
+# 네이티브 라이브러리 인터페이스 보호
+-keep class **.*JNI* { *; }
+-keep class **.toolChecker** { *; }
+
+# 보안 관련 네이티브 라이브러리 보호
+-keep,allowshrinking,allowoptimization class * {
+    native <methods>;
+}
+
+# ===== 조건부 로그 제거 규칙 (App Safer 호환) =====
+# 릴리즈 빌드에서만 로그 제거, 보안 검증 클래스는 제외
 -assumenosideeffects class android.util.Log {
     public static boolean isLoggable(java.lang.String, int);
     public static int v(...);
-    public static int i(...);
-    public static int w(...);
     public static int d(...);
-    public static int e(...);
+    # 경고와 에러 로그는 App Safer 검증을 위해 유지
+    # public static int w(...);
+    # public static int e(...);
     public static int println(...);
 }
 
-# System.out/err 로그 제거
--assumenosideeffects class java.lang.System {
-    public static void out.println(...);
-    public static void err.println(...);
+# 중요: System.out 완전 제거는 App Safer 검증을 방해할 수 있음
+# -assumenosideeffects class java.lang.System {
+#     public static void out.println(...);
+#     public static void err.println(...);
+# }
+
+# ===== App Safer 추가 호환성 규칙 =====
+# Application 클래스 보호
+-keep public class * extends android.app.Application { *; }
+
+# 매니페스트 등록 컴포넌트 보호 (App Safer 검증 필요)
+-keep public class * extends android.app.Activity { *; }
+-keep public class * extends android.content.BroadcastReceiver { *; }
+-keep public class * extends android.content.ContentProvider { *; }
+
+# 리플렉션 사용 클래스 보호
+-keepattributes Signature
+-keepattributes *Annotation*
+-keepattributes InnerClasses
+
+# 빌드 정보 보호 (App Safer에서 참조할 수 있음)
+-keep class **.BuildConfig { *; }
+
+# 보안 검증 우회 방지
+-keep class * {
+    @com.facebook.proguard.annotations.DoNotStrip <fields>;
+    @com.facebook.proguard.annotations.DoNotStrip <methods>;
 }
 
-# 개발자 로그 제거 (앱에서 사용하는 경우)
--assumenosideeffects class java.io.PrintStream {
-    public void println(...);
-    public void print(...);
-}
+# ===== R8 Missing Classes 해결 =====
+# Coil3 관련 완전 제거 (사용하지 않는 라이브러리)
+-dontwarn coil3.**
+-dontwarn coil3.network.**
+-dontwarn coil3.PlatformContext
+-dontwarn coil3.network.ConnectivityChecker
+-dontwarn coil3.network.okhttp.**
+-dontwarn coil3.network.okhttp.OkHttpNetworkFetcher**
+
+# Recoil 관련 제거 (더 이상 사용하지 않음)
+-dontwarn recoil.**
+
+# Kotlin coroutines 관련 missing class 대응
+-dontwarn kotlin.coroutines.jvm.internal.**
+-dontwarn kotlinx.coroutines.**
+-dontwarn kotlinx.coroutines.flow.**
+
+# OkHttp/Okio 관련 missing class 대응
+-dontwarn okhttp3.**
+-dontwarn okio.**
+
+# React Native Paper 이미지 로딩 보호
+-keep class com.facebook.react.views.image.** { *; }
+-keep class com.facebook.drawee.** { *; }
+-keep class com.facebook.imagepipeline.** { *; }
