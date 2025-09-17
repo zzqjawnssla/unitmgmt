@@ -1,6 +1,12 @@
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { Linking, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { Text, IconButton, Surface, Appbar } from 'react-native-paper';
+import React, {
+  useEffect,
+  useState,
+  useMemo,
+  useCallback,
+  useRef,
+} from 'react';
+import { Linking, StyleSheet, View, Dimensions } from 'react-native';
+import { Text, IconButton, Surface } from 'react-native-paper';
 import { useAuth } from '../../store/AuthContext';
 import { searchCodeList } from '../../store/AuthContext';
 import {
@@ -15,6 +21,7 @@ import {
   useCameraDevice,
   useCameraPermission,
   useCodeScanner,
+  useCameraFormat,
 } from 'react-native-vision-camera';
 import { Snackbar } from 'react-native-paper';
 import type { RootStackParamList } from '../../navigation/RootStackNavigation';
@@ -41,6 +48,7 @@ export const BarcodeScanScreen: React.FC = () => {
   const { code } = route.params;
 
   const { hasPermission, requestPermission } = useCameraPermission();
+  const cameraRef = useRef<Camera>(null);
 
   const [hasScanned, setHasScanned] = useState(false);
   const [scanCode, setScanCode] = useState<string>('');
@@ -71,6 +79,12 @@ export const BarcodeScanScreen: React.FC = () => {
 
   const device = useCameraDevice('back');
 
+  const format = useCameraFormat(device, [
+    { fps: 30 },
+    { videoResolution: 'max' },
+    { photoAspectRatio: 1.78 },
+  ]);
+
   const codeTypes = useMemo(() => {
     return code === '1' ? ['qr'] : ['ean-13', 'code-128'];
   }, [code]);
@@ -84,26 +98,6 @@ export const BarcodeScanScreen: React.FC = () => {
       }
     },
   });
-
-  if (device == null || !hasPermission) {
-    return (
-      <Surface style={styles.container}>
-        <Appbar.Header>
-          <Appbar.BackAction onPress={() => navigation.goBack()} />
-          <Appbar.Content
-            title={code === '1' ? 'SKT 바코드 스캔' : '제조사 S/N 스캔'}
-          />
-        </Appbar.Header>
-        <View style={styles.errorContainer}>
-          <Text variant="titleMedium">
-            {device == null
-              ? '카메라를 사용할 수 없습니다.'
-              : '카메라 권한이 필요합니다.'}
-          </Text>
-        </View>
-      </Surface>
-    );
-  }
 
   // 스캔 영역 크기 계산
   const { scanAreaWidth, scanAreaHeight } = useMemo(
@@ -136,17 +130,54 @@ export const BarcodeScanScreen: React.FC = () => {
     setHasScanned(false);
   }, []);
 
+  // 주기적 포커스 조정
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (cameraRef.current && !hasScanned) {
+        const centerX = Dimensions.get('window').width / 2;
+        const centerY = Dimensions.get('window').height / 2;
+        cameraRef.current.focus({ x: centerX, y: centerY });
+      }
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [hasScanned]);
+
+  if (device == null || !hasPermission) {
+    return (
+      <Surface style={styles.container}>
+        {/*<Appbar.Header>*/}
+        {/*  <Appbar.BackAction onPress={() => navigation.goBack()} />*/}
+        {/*  <Appbar.Content*/}
+        {/*    title={code === '1' ? 'SKT 바코드 스캔' : '제조사 S/N 스캔'}*/}
+        {/*  />*/}
+        {/*</Appbar.Header>*/}
+        <View style={styles.errorContainer}>
+          <Text variant="titleMedium">
+            {device == null
+              ? '카메라를 사용할 수 없습니다.'
+              : '카메라 권한이 필요합니다.'}
+          </Text>
+        </View>
+      </Surface>
+    );
+  }
+
   return (
     <Surface style={styles.container}>
-      <Appbar.Header>
-        <Appbar.BackAction onPress={() => navigation.goBack()} />
-        <Appbar.Content
-          title={code === '1' ? 'SKT 바코드 스캔' : '제조사 S/N 스캔'}
-        />
-      </Appbar.Header>
+      {/*<Appbar.Header>*/}
+      {/*  <Appbar.BackAction onPress={() => navigation.goBack()} />*/}
+      {/*  <Appbar.Content*/}
+      {/*    title={code === '1' ? 'SKT 바코드 스캔' : '제조사 S/N 스캔'}*/}
+      {/*  />*/}
+      {/*</Appbar.Header>*/}
 
       <Camera
+        ref={cameraRef}
         device={device}
+        format={format}
+        photoQualityBalance="quality"
+        fps={30}
         codeScanner={codeScanner}
         isActive={!hasScanned}
         style={styles.camera}
@@ -186,6 +217,9 @@ export const BarcodeScanScreen: React.FC = () => {
           {code === '1'
             ? 'QR 코드를 스캔 영역에 맞춰주세요'
             : '바코드를 스캔 영역에 맞춰주세요'}
+        </Text>
+        <Text variant="bodySmall" style={styles.distanceGuide}>
+          최적 스캔 거리: 20-30cm
         </Text>
       </View>
 
@@ -304,5 +338,16 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  distanceGuide: {
+    marginTop: verticalScale(20),
+    fontSize: scale(12),
+    opacity: 0.9,
+    color: 'green',
+    textAlign: 'center',
+    // backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    paddingHorizontal: scale(16),
+    paddingVertical: verticalScale(8),
+    borderRadius: scale(8),
   },
 });

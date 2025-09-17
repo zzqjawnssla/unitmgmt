@@ -12,7 +12,8 @@
     "deploy:patch": "bash scripts/release-and-deploy.sh patch",
     "deploy:minor": "bash scripts/release-and-deploy.sh minor",
     "deploy:major": "bash scripts/release-and-deploy.sh major",
-    "upload:only": "bash scripts/upload-only.sh",
+    "build:android:release": "bash scripts/build-signed.sh",
+    "deploy:android:appsafer": "bash scripts/android-deploy-appsafer.sh",
     "ios:upload:only": "bash scripts/ios-upload-only.sh",
     "validate:aws": "bash scripts/validate-aws-setup.sh"
   },

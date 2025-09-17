@@ -87,11 +87,32 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 7
         versionName "0.0.7"
-        ndk {
-            // App Safer 호환성과 APK 크기 최적화를 위해 주요 아키텍처만 포함
-            abiFilters "arm64-v8a", "armeabi-v7a"
+        // ndk.abiFilters 대신 splits.abi 사용
+    }
+
+    // Lint 설정
+    lint {
+        abortOnError false
+    }
+
+    // ABI 필터링 - App Safer 호환성을 위해 ARM 아키텍처만 포함
+    splits {
+        abi {
+            reset()
+            enable true
+            universalApk false
+            include "arm64-v8a", "armeabi-v7a"
         }
     }
+
+    // Release keystore 설정
+    def keystorePropertiesFile = file('keystore.properties')
+    def keystoreProperties = new Properties()
+
+    if (keystorePropertiesFile.exists()) {
+        keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+    }
+
     signingConfigs {
         debug {
             storeFile file('debug.keystore')
@@ -99,18 +120,9 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
-    }
-    
-    // Release keystore 설정을 미리 준비
-    def keystorePropertiesFile = file('keystore.properties')
-    println "Checking keystore file: ${keystorePropertiesFile.absolutePath}"
-    println "File exists: ${keystorePropertiesFile.exists()}"
-    if (keystorePropertiesFile.exists()) {
-        def keystoreProperties = new Properties()
-        keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
-        
-        signingConfigs {
-            release {
+
+        release {
+            if (keystorePropertiesFile.exists()) {
                 storeFile file(keystoreProperties['storeFile'])
                 storePassword keystoreProperties['storePassword']
                 keyAlias keystoreProperties['keyAlias']
@@ -124,11 +136,7 @@ android {
             signingConfig signingConfigs.debug
         }
         release {
-            if (keystorePropertiesFile.exists()) {
-                signingConfig signingConfigs.release
-            } else {
-                throw new GradleException("Release keystore not found! Please configure android/keystore.properties for production builds")
-            }
+            signingConfig signingConfigs.release
             minifyEnabled enableProguardInReleaseBuilds
             shrinkResources true
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"

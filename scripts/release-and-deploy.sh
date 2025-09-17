@@ -163,46 +163,33 @@ echo -e "${GREEN}✅ Version bumped to: ${NEW_VERSION} (code: ${VERSION_CODE})${
 if [ "$SKIP_BUILD" = false ]; then
     echo -e "\n${BLUE}Step 2: Building APK${NC}"
     echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    
+
     if [ "$DRY_RUN" = true ]; then
-        echo -e "${CYAN}[DRY RUN] Would build APK...${NC}"
-        APK_FILE="android/app/unitmgmt-v${NEW_VERSION}.apk"
+        echo -e "${CYAN}[DRY RUN] Would execute: ./scripts/build-signed.sh${NC}"
+        APK_FILE="android/app/unitmgmt-v${NEW_VERSION}-release.apk"
         APK_SIZE_BYTES=50000000  # 가상 크기
     else
-        # Clean previous builds
-        echo -e "${YELLOW}🧹 Cleaning previous builds...${NC}"
-        cd android
-        ./gradlew clean
-        
-        # Build release APK
-        echo -e "${YELLOW}🔨 Building release APK...${NC}"
-        ./gradlew assembleRelease
-        
+        echo -e "${YELLOW}🔨 Executing build script...${NC}"
+        ./scripts/build-signed.sh
+
         if [ $? -eq 0 ]; then
             echo -e "${GREEN}✅ Build successful!${NC}"
-            
-            # Find and copy APK
-            BUILT_APK=$(find app/build/outputs/apk/release -name "*.apk" | head -1)
-            if [ -n "$BUILT_APK" ]; then
-                FINAL_APK_NAME="unitmgmt-v${NEW_VERSION}.apk"
-                cp "$BUILT_APK" "app/$FINAL_APK_NAME"
-                APK_FILE="android/app/$FINAL_APK_NAME"
-                APK_SIZE_BYTES=$(stat -f%z "$BUILT_APK" 2>/dev/null || stat -c%s "$BUILT_APK" 2>/dev/null)
-                echo -e "${GREEN}✅ APK created: $FINAL_APK_NAME${NC}"
+            APK_FILE="android/app/unitmgmt-v${NEW_VERSION}-release.apk"
+            if [ -f "$APK_FILE" ]; then
+                APK_SIZE_BYTES=$(stat -f%z "$APK_FILE" 2>/dev/null || stat -c%s "$APK_FILE" 2>/dev/null)
+                echo -e "${GREEN}✅ APK created: unitmgmt-v${NEW_VERSION}-release.apk${NC}"
             else
-                echo -e "${RED}❌ No APK file found!${NC}"
+                echo -e "${RED}❌ APK file not found!${NC}"
                 exit 1
             fi
         else
             echo -e "${RED}❌ Build failed!${NC}"
             exit 1
         fi
-        
-        cd ..
     fi
 else
     echo -e "\n${YELLOW}⏭ Skipping build step${NC}"
-    APK_FILE="android/app/unitmgmt-v${NEW_VERSION}.apk"
+    APK_FILE="android/app/unitmgmt-v${NEW_VERSION}-release.apk"
     if [ -f "$APK_FILE" ]; then
         APK_SIZE_BYTES=$(stat -f%z "$APK_FILE" 2>/dev/null || stat -c%s "$APK_FILE" 2>/dev/null)
     else
@@ -211,156 +198,43 @@ else
     fi
 fi
 
-# 3. S3 업로드
-if [ "$SKIP_UPLOAD" = false ]; then
-    echo -e "\n${BLUE}Step 3: Upload to S3${NC}"
-    echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    
-    S3_KEY="${AWS_S3_PREFIX}/unitmgmt-v${NEW_VERSION}.apk"
-    S3_URL="https://${AWS_S3_BUCKET}.s3.${AWS_REGION}.amazonaws.com/${S3_KEY}"
-    
-    if [ "$DRY_RUN" = true ]; then
-        echo -e "${CYAN}[DRY RUN] Would upload to: s3://${AWS_S3_BUCKET}/${S3_KEY}${NC}"
-    else
-        echo -e "${YELLOW}📤 Uploading APK to S3...${NC}"
-        
-        # APK 파일 크기 가져오기 (MB 단위로 표시)
-        APK_SIZE_MB=$((APK_SIZE_BYTES / 1024 / 1024))
-        echo -e "${CYAN}📊 File size: ${APK_SIZE_MB}MB${NC}"
-        
-        # S3 업로드
-        echo -e "${CYAN}🔄 Uploading... Please wait${NC}"
-        aws s3 cp "$APK_FILE" "s3://${AWS_S3_BUCKET}/${S3_KEY}" \
-            --region ${AWS_REGION} \
-            --metadata "version=${NEW_VERSION},versionCode=${VERSION_CODE}" \
-            --cli-read-timeout 0 \
-            --cli-connect-timeout 60
-        
-        if [ $? -eq 0 ]; then
-            echo -e "${GREEN}✅ Upload successful!${NC}"
-            echo -e "${CYAN}📍 S3 URL: ${S3_URL}${NC}"
-        else
-            echo -e "${RED}❌ Upload failed!${NC}"
-            exit 1
-        fi
-    fi
-else
-    echo -e "\n${YELLOW}⏭ Skipping upload step${NC}"
-    S3_KEY="${AWS_S3_PREFIX}/unitmgmt-v${NEW_VERSION}.apk"
-    S3_URL="https://${AWS_S3_BUCKET}.s3.${AWS_REGION}.amazonaws.com/${S3_KEY}"
-fi
-
-# 4. DynamoDB 메타데이터 저장
-echo -e "\n${BLUE}Step 4: Update DynamoDB Metadata${NC}"
+# 3. AppSafer 업로드 안내
+echo -e "\n${BLUE}Step 3: AppSafer Upload Instructions${NC}"
 echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 
-# 메타데이터 준비
-TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-APK_SIZE_KB=$((APK_SIZE_BYTES / 1024))
-APK_FILENAME="unitmgmt-v${NEW_VERSION}-release.apk"
+echo -e "${CYAN}📋 Next Steps for AppSafer Process:${NC}"
+echo -e "  1. ${YELLOW}수동으로 AppSafer에 APK 업로드${NC}"
+echo -e "     • 파일: ${CYAN}${APK_FILE}${NC}"
+echo -e "  2. ${YELLOW}AppSafer 처리 완료 후 APK 다운로드${NC}"
+echo -e "     • 저장 위치: ${CYAN}android/downloaded-apks/com.unitmgmt.apk${NC}"
+echo -e "  3. ${YELLOW}최종 배포 실행${NC}"
+echo -e "     • 명령어: ${CYAN}npm run deploy:android:appsafer${NC}"
+echo -e "     • 또는: ${CYAN}./scripts/android-deploy-appsafer.sh${NC}"
+echo ""
+echo -e "${RED}⚠️  중요: 이 스크립트는 AWS 업로드를 수행하지 않습니다.${NC}"
+echo -e "${RED}   AppSafer 처리 후 android-deploy-appsafer.sh를 실행하세요.${NC}"
 
-# 이전 활성 버전 비활성화
-if [ "$DRY_RUN" = true ]; then
-    echo -e "${CYAN}[DRY RUN] Would deactivate previous active versions${NC}"
-else
-    echo -e "${YELLOW}🔄 Deactivating previous active versions...${NC}"
-    
-    # 현재 활성 버전 조회 및 비활성화
-    aws dynamodb query \
-        --table-name ${AWS_DYNAMODB_TABLE} \
-        --key-condition-expression "app_id = :app_id" \
-        --filter-expression "is_active = :active AND platform = :platform" \
-        --expression-attribute-values '{
-            ":app_id": {"S": "'${APP_ID}'"},
-            ":active": {"BOOL": true},
-            ":platform": {"S": "android"}
-        }' \
-        --region ${AWS_REGION} \
-        --output json | \
-    jq -r '.Items[] | .version_code.N' | \
-    while read -r old_version_code; do
-        if [ -n "$old_version_code" ]; then
-            echo "  Deactivating version: $old_version_code"
-            aws dynamodb update-item \
-                --table-name ${AWS_DYNAMODB_TABLE} \
-                --key '{
-                    "app_id": {"S": "'${APP_ID}'"},
-                    "version_code": {"N": "'${old_version_code}'"}
-                }' \
-                --update-expression "SET is_active = :inactive" \
-                --expression-attribute-values '{":inactive": {"BOOL": false}}' \
-                --region ${AWS_REGION} > /dev/null 2>&1
-        fi
-    done
-fi
-
-# 새 버전 메타데이터 저장
-if [ "$DRY_RUN" = true ]; then
-    echo -e "${CYAN}[DRY RUN] Would save metadata to DynamoDB:${NC}"
-    echo "  app_id: ${APP_ID}"
-    echo "  platform_version: ${PLATFORM_VERSION}"
-    echo "  version_name: ${NEW_VERSION}"
-    echo "  release_notes: ${RELEASE_NOTES}"
-else
-    echo -e "${YELLOW}💾 Saving new version metadata...${NC}"
-    
-    # JSON 파일로 item 데이터를 준비하여 Korean 문자 처리
-    cat > /tmp/dynamodb_item.json << EOF
-{
-    "app_id": {"S": "${APP_ID}"},
-    "version_code": {"N": "${VERSION_CODE}"},
-    "platform": {"S": "android"},
-    "version_name": {"S": "${NEW_VERSION}"},
-    "filename": {"S": "${APK_FILENAME}"},
-    "file_size": {"N": "${APK_SIZE_BYTES}"},
-    "created_at": {"S": "${TIMESTAMP}"},
-    "release_date": {"S": "$(date -u +"%Y-%m-%d")"},
-    "download_url": {"S": "${S3_URL}"},
-    "download_count": {"N": "0"},
-    "is_active": {"BOOL": true},
-    "release_notes": {"S": "${RELEASE_NOTES}"}
-}
-EOF
-    
-    aws dynamodb put-item \
-        --table-name ${AWS_DYNAMODB_TABLE} \
-        --item file:///tmp/dynamodb_item.json \
-        --region ${AWS_REGION}
-    
-    # 임시 파일 삭제
-    rm -f /tmp/dynamodb_item.json
-    
-    if [ $? -eq 0 ]; then
-        echo -e "${GREEN}✅ Metadata saved successfully!${NC}"
-    else
-        echo -e "${RED}❌ Failed to save metadata!${NC}"
-        exit 1
-    fi
-fi
-
-# 5. Git 커밋 (선택사항)
-echo -e "\n${BLUE}Step 5: Git Operations${NC}"
+# 4. Git 커밋 및 태그 (선택사항)
+echo -e "\n${BLUE}Step 4: Git Operations${NC}"
 echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 
 if [ "$DRY_RUN" = true ]; then
     echo -e "${CYAN}[DRY RUN] Suggested git commands:${NC}"
     echo "  git add -A"
-    echo "  git commit -m \"chore: release v${NEW_VERSION} - ${RELEASE_NOTES}\""
+    echo "  git commit -m \"chore: build v${NEW_VERSION} - ${RELEASE_NOTES}\""
     echo "  git tag v${NEW_VERSION}"
-    echo "  git push origin main --tags"
 else
     echo -e "${YELLOW}💡 Suggested git commands:${NC}"
     echo -e "${CYAN}git add -A${NC}"
-    echo -e "${CYAN}git commit -m \"chore: release v${NEW_VERSION} - ${RELEASE_NOTES}\"${NC}"
+    echo -e "${CYAN}git commit -m \"chore: build v${NEW_VERSION} - ${RELEASE_NOTES}\"${NC}"
     echo -e "${CYAN}git tag v${NEW_VERSION}${NC}"
-    echo -e "${CYAN}git push origin main --tags${NC}"
     echo ""
     echo -e "${YELLOW}Do you want to execute these commands? (y/n):${NC}"
     read -r EXECUTE_GIT
-    
+
     if [[ "$EXECUTE_GIT" == "y" ]] || [[ "$EXECUTE_GIT" == "Y" ]]; then
         git add -A
-        git commit -m "chore: release v${NEW_VERSION} - ${RELEASE_NOTES}"
+        git commit -m "chore: build v${NEW_VERSION} - ${RELEASE_NOTES}"
         git tag "v${NEW_VERSION}"
         echo -e "${GREEN}✅ Git commit and tag created${NC}"
         echo -e "${YELLOW}Push to remote? (y/n):${NC}"
@@ -372,26 +246,33 @@ else
     fi
 fi
 
+
 # 완료 요약
 echo -e "\n${CYAN}═══════════════════════════════════════════════════════════════${NC}"
-echo -e "${GREEN}       🎉 Release Pipeline Complete! 🎉${NC}"
+echo -e "${GREEN}       🎉 Build Pipeline Complete! 🎉${NC}"
 echo -e "${CYAN}═══════════════════════════════════════════════════════════════${NC}"
 echo ""
 echo -e "${GREEN}📊 Summary:${NC}"
 echo -e "  • Version: ${CYAN}${NEW_VERSION}${NC} (Code: ${VERSION_CODE})"
-echo -e "  • APK Size: ${CYAN}$((APK_SIZE_KB / 1024)) MB${NC} (${APK_SIZE_KB} KB)"
-echo -e "  • S3 Location: ${CYAN}s3://${AWS_S3_BUCKET}/${S3_KEY}${NC}"
-echo -e "  • Download URL: ${CYAN}${S3_URL}${NC}"
-echo -e "  • DynamoDB Key: ${CYAN}${APP_ID} / ${VERSION_CODE}${NC}"
+echo -e "  • APK File: ${CYAN}${APK_FILE}${NC}"
+if [ "$DRY_RUN" = false ]; then
+    APK_SIZE_MB=$((APK_SIZE_BYTES / 1024 / 1024))
+    echo -e "  • APK Size: ${CYAN}${APK_SIZE_MB} MB${NC}"
+fi
 echo -e "  • Release Notes: ${CYAN}${RELEASE_NOTES}${NC}"
-echo -e "  • Status: ${GREEN}Active${NC}"
+echo -e "  • Status: ${YELLOW}Ready for AppSafer${NC}"
 echo ""
 
-# iOS 배포 안내
+# AppSafer 및 배포 안내
 echo -e "${BLUE}📱 Next Steps:${NC}"
-echo -e "  • ${YELLOW}iOS Deployment Required${NC}: Run iOS release script for complete deployment"
-echo -e "  • Command: ${CYAN}./scripts/ios-release-and-deploy.sh${NC}"
-echo -e "  • This will build and deploy the iOS version with the same version number"
+echo -e "  1. ${YELLOW}AppSafer에 APK 업로드${NC}"
+echo -e "     • 파일: ${CYAN}${APK_FILE}${NC}"
+echo -e "  2. ${YELLOW}처리된 APK 다운로드${NC}"
+echo -e "     • 저장: ${CYAN}android/downloaded-apks/com.unitmgmt.apk${NC}"
+echo -e "  3. ${YELLOW}최종 배포${NC}"
+echo -e "     • 명령어: ${CYAN}npm run deploy:android:appsafer${NC}"
+echo -e "  4. ${YELLOW}iOS 배포 (필요시)${NC}"
+echo -e "     • 명령어: ${CYAN}npm run ios:upload:only${NC}"
 echo ""
 
 if [ "$DRY_RUN" = true ]; then

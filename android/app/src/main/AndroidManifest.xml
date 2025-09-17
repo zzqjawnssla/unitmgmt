@@ -20,8 +20,6 @@
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO"/>
 
-    <!-- APK 업데이트 관련 권한 -->
-    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
 
 
     <application
@@ -62,16 +60,6 @@
         android:exported="true">
       </activity>
       
-      <!-- Activity Alias for direct MainActivity launch -->
-      <activity-alias
-        android:name=".MainActivityAlias"
-        android:targetActivity=".MainActivity"
-        android:exported="true">
-        <intent-filter>
-            <action android:name="android.intent.action.MAIN" />
-            <category android:name="android.intent.category.LAUNCHER" />
-        </intent-filter>
-      </activity-alias>
       
       <!-- FileProvider for react-native-file-viewer -->
       <provider
