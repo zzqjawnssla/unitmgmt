@@ -364,7 +364,11 @@ const SearchUnitCountScreen: React.FC = () => {
   return (
     <Surface style={styles.container}>
       <Appbar.Header style={styles.appbar}>
-        <Appbar.BackAction onPress={() => navigation.goBack()} />
+        <Appbar.BackAction
+          onPress={() => navigation.goBack()}
+          iconColor={COLORS.text}
+        />
+
         <Appbar.Content
           title="유니트 현황 조회"
           titleStyle={styles.appbarTitle}
@@ -531,6 +535,7 @@ const SearchUnitCountScreen: React.FC = () => {
             loading={isLoading}
             style={styles.searchButton}
             buttonColor={COLORS.primary}
+            labelStyle={styles.submitButtonText}
           >
             조회
           </Button>
@@ -592,7 +597,7 @@ const styles = StyleSheet.create({
   },
   appbarTitle: {
     color: COLORS.text,
-    fontWeight: '600',
+    fontWeight: '800',
   },
   content: {
     flex: 1,
@@ -718,6 +723,11 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     borderRadius: scale(12),
     paddingVertical: scale(4),
+  },
+  submitButtonText: {
+    color: COLORS.background,
+    fontWeight: '600',
+    fontSize: scale(16),
   },
 
   // Results List

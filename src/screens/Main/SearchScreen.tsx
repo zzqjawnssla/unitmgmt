@@ -231,8 +231,8 @@ export default function SearchScreen(): React.JSX.Element {
             <View style={styles.instructionsContainer}>
               <Text variant="bodyMedium" style={styles.instructionsText}>
                 {codeState.value === '1'
-                  ? 'SKT바코드를 입력하거나 스캔 버튼을 눌러주세요'
-                  : '제조사S/N을 입력하거나 스캔 버튼을 눌러주세요'}
+                  ? 'SKT바코드를 입력 또는 스캔 버튼을 눌러주세요.'
+                  : '제조사S/N을 입력 또는 스캔 버튼을 눌러주세요.'}
               </Text>
             </View>
           </View>

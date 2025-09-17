@@ -131,6 +131,7 @@ const styles = StyleSheet.create({
     fontSize: scale(16),
     fontWeight: 'bold',
     paddingVertical: verticalScale(4),
+    color: BRAND_COLORS.background,
   },
   errorContainer: {
     backgroundColor: '#FFEBEE',

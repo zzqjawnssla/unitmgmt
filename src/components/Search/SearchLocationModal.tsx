@@ -6,52 +6,57 @@ import {
   View,
   FlatList,
   ScrollView,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import {
   Text,
   TextInput,
   SegmentedButtons,
   Snackbar,
-  List,
+  ActivityIndicator,
 } from 'react-native-paper';
 import { scale, verticalScale } from 'react-native-size-matters';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { api } from '../../services/api/api';
 import { useTeams } from '../../hooks/useSelectList';
 
-// Brand Colors
-const BRAND_COLORS = {
+// KakaoTalk-style colors (consistent with UseUnitScreen)
+const COLORS = {
   primary: '#F47725',
-  background: '#FCFCFC',
-  surface: '#FFFFFF',
+  primaryLight: 'rgba(244, 119, 37, 0.1)',
+  background: '#FFFFFF',
+  surface: '#F9F9F9',
   text: '#000000',
   textSecondary: '#666666',
-  light: 'rgba(244, 119, 37, 0.1)',
+  textTertiary: '#999999',
+  border: '#E0E0E0',
+  divider: '#F0F0F0',
 };
 
 interface SearchLocationModalProps {
   isVisible: boolean;
   onClose: () => void;
-  location: { 
-    id: string; 
-    location: string 
+  location: {
+    id: string;
+    location: string;
   };
   searchLocation: {
     value: string;
     label: string;
   };
-  setSearchLocation: React.Dispatch<React.SetStateAction<{
-    value: string;
-    label: string;
-  }>>;
+  setSearchLocation: React.Dispatch<
+    React.SetStateAction<{
+      value: string;
+      label: string;
+    }>
+  >;
 }
 
 const menuItems = [
   { value: 'zp_name', label: '국소명' },
   { value: 'zp_code', label: '통합시설코드' },
 ];
-
-// Team data will be fetched using useTeams hook
 
 export const SearchLocationModal: React.FC<SearchLocationModalProps> = ({
   isVisible,
@@ -67,23 +72,17 @@ export const SearchLocationModal: React.FC<SearchLocationModalProps> = ({
   const [result, setResult] = useState<any>({ results: [], count: 0 });
   const [nextPage, setNextPage] = useState<string | null>(null);
   const [selectMenu, setSelectMenu] = useState(menuItems[0]);
-  const [expandedAccordion, setExpandedAccordion] = useState<string | null>(null);
+  const [expandedAccordion, setExpandedAccordion] = useState<string | null>(
+    null,
+  );
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   const showSnackbar = (message: string) => {
     setSnackbarMessage(message);
     setSnackbarVisible(true);
   };
-
-  // Debug useEffect to track result state changes
-  React.useEffect(() => {
-    console.log('Result state changed:', result);
-    console.log('Result.results:', result?.results);
-    console.log('Result.results type:', typeof result?.results);
-    console.log('Result.results is array:', Array.isArray(result?.results));
-    console.log('About to render FlatList with data length:', result?.results?.length);
-  }, [result]);
 
   // 지역 목록을 중복 제거해서 추출
   const uniqueRegions = useMemo(() => {
@@ -95,7 +94,7 @@ export const SearchLocationModal: React.FC<SearchLocationModalProps> = ({
       key: item.region,
       value: item.region,
     }));
-    
+
     // 중복 제거
     const uniqueValues = [...new Set(regions.map(region => region.value))];
     return uniqueValues.map(region => ({
@@ -109,7 +108,7 @@ export const SearchLocationModal: React.FC<SearchLocationModalProps> = ({
     if (!teamData?.results || selectedRegion.value === '') {
       return [];
     }
-    
+
     return teamData.results
       .filter((team: any) => team.region === selectedRegion.value)
       .map((team: any) => ({
@@ -151,7 +150,7 @@ export const SearchLocationModal: React.FC<SearchLocationModalProps> = ({
 
     let url = '';
     let params = {};
-    
+
     switch (location.id) {
       case '1': // 국소
         url = 'unit_zpcode_list';
@@ -176,12 +175,8 @@ export const SearchLocationModal: React.FC<SearchLocationModalProps> = ({
 
     try {
       const response = await api.get(`/apps/${url}/`, { params });
-      console.log('Search response:', response.data);
-      console.log('Search results:', response.data.results);
-      console.log('Search results length:', response.data.results?.length);
       setResult(response.data);
       setNextPage(response.data.next);
-      console.log('After setResult - current result state should be:', response.data);
     } catch (error) {
       console.error('Search error:', error);
       showSnackbar('검색에 실패했습니다.');
@@ -189,232 +184,373 @@ export const SearchLocationModal: React.FC<SearchLocationModalProps> = ({
   };
 
   const fetchNextPage = async () => {
+    // 검색 결과가 없거나 이미 로딩 중일 때는 실행하지 않음
+    if (!result?.results?.length || isTeamLoading || isLoadingMore) {
+      return;
+    }
+
+    // 이미 모든 데이터를 로드했는지 확인
+    if (result?.results?.length >= result?.count) {
+      showSnackbar('더 이상 불러올 데이터가 없습니다.');
+      return;
+    }
+
     if (nextPage) {
+      setIsLoadingMore(true);
       try {
         const response = await api.get(nextPage);
+        const newResults = [
+          ...(result.results || []),
+          ...response.data.results,
+        ];
+
         setResult((prevList: any) => ({
           ...prevList,
-          results: [...(prevList.results || []), ...response.data.results],
+          results: newResults,
           next: response.data.next,
         }));
         setNextPage(response.data.next);
+
+        // 모든 데이터를 로드했는지 다시 확인
+        if (newResults.length >= result.count) {
+          showSnackbar('더 이상 불러올 데이터가 없습니다.');
+        }
       } catch (error) {
         console.log('Pagination error:', error);
         showSnackbar('추가 데이터를 불러오는데 실패했습니다.');
+      } finally {
+        setIsLoadingMore(false);
       }
-    } else {
+    } else if (result?.results?.length > 0) {
+      // nextPage가 없고 검색 결과가 있을 때만 메시지 표시
       showSnackbar('더 이상 불러올 데이터가 없습니다.');
     }
+  };
+
+  // Loading Footer Component for pagination
+  const renderFooter = () => {
+    if (!isLoadingMore) return null;
+
+    return (
+      <View style={styles.loadingFooter}>
+        <ActivityIndicator
+          animating={true}
+          color={COLORS.primary}
+          size="small"
+        />
+        <Text style={styles.loadingText}>더 많은 결과를 불러오는 중...</Text>
+      </View>
+    );
   };
 
   return (
     <>
       <Modal visible={isVisible} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            {/* Header */}
-            <View style={styles.modalHeader}>
-              <Text variant="titleLarge" style={styles.headerText}>
-                세부 위치 검색
-              </Text>
-              <TouchableOpacity onPress={handleClose}>
-                <Icon name="close" size={24} color={BRAND_COLORS.textSecondary} />
-              </TouchableOpacity>
-            </View>
+        <TouchableWithoutFeedback
+          onPress={() => {
+            Keyboard.dismiss();
+            handleClose();
+          }}
+        >
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <View style={styles.modalContainer}>
+                {/* Header */}
+                <View style={styles.modalHeader}>
+                  <Text variant="titleLarge" style={styles.headerText}>
+                    세부 위치 검색
+                  </Text>
+                  <TouchableOpacity onPress={handleClose}>
+                    <Icon name="close" size={24} color={COLORS.textSecondary} />
+                  </TouchableOpacity>
+                </View>
 
-            {/* Menu Selection */}
-            <SegmentedButtons
-              buttons={menuItems.map(item => ({
-                value: item.value,
-                label: item.label,
-                style: {
-                  backgroundColor: selectMenu.value === item.value 
-                    ? BRAND_COLORS.light : 'transparent',
-                },
-              }))}
-              value={selectMenu.value}
-              onValueChange={(value) => {
-                const selectedItem = menuItems.find(item => item.value === value);
-                if (selectedItem) {
-                  setSelectMenu(selectedItem);
-                  setSearchQuery('');
-                  setResult({ results: [], count: 0 });
-                }
-              }}
-              theme={{ roundness: 8 }}
-              style={styles.segmentedButtons}
-            />
+                {/* Menu Selection */}
+                <SegmentedButtons
+                  buttons={menuItems.map(item => ({
+                    value: item.value,
+                    label: item.label,
+                    style: {
+                      backgroundColor:
+                        selectMenu.value === item.value
+                          ? COLORS.primary
+                          : 'transparent',
+                      borderColor: COLORS.primaryLight,
+                      borderRadius: 8,
+                    },
+                  }))}
+                  value={selectMenu.value}
+                  onValueChange={value => {
+                    const selectedItem = menuItems.find(
+                      item => item.value === value,
+                    );
+                    if (selectedItem) {
+                      setSelectMenu(selectedItem);
+                      setSearchQuery('');
+                      setResult({ results: [], count: 0 });
+                    }
+                  }}
+                  theme={{ roundness: 8 }}
+                  style={styles.segmentedButtons}
+                />
 
-            {/* Region and Team Selection with AccordionGroup (only for zp_name search) */}
-            {selectMenu.value === 'zp_name' && (
-              <View style={styles.accordionSection}>
-                <List.AccordionGroup 
-                  expandedId={expandedAccordion || undefined}
-                  onAccordionPress={(expandedId) => 
-                    setExpandedAccordion(expandedId === expandedAccordion ? null : expandedId?.toString() || null)
-                  }
-                >
-                  <List.Accordion
-                    title={selectedRegion.value || '지역 선택'}
-                    id="region"
-                    style={styles.accordionItem}
-                    titleStyle={styles.accordionTitle}
-                  >
-                    <ScrollView style={styles.accordionContent}>
-                      {isTeamLoading ? (
-                        <List.Item title="로딩 중..." />
-                      ) : (
-                        uniqueRegions?.map((regionItem: any, index: number) => (
-                          <List.Item
-                            key={index}
-                            title={regionItem.value}
-                            titleStyle={styles.listItemTitle}
-                            onPress={() => {
-                              setSelectedRegion({ 
-                                key: regionItem.key, 
-                                value: regionItem.value 
-                              });
-                              setTeam({ key: 0, value: '' }); // 지역 변경시 팀 초기화
-                              setExpandedAccordion(null);
-                            }}
-                          />
-                        )) || (
-                          <List.Item title="데이터가 없습니다" />
-                        )
-                      )}
-                    </ScrollView>
-                  </List.Accordion>
-
-                  {selectedRegion.value !== '' && (
-                    <List.Accordion
-                      title={team.value || '팀 선택'}
-                      id="team"
-                      style={styles.accordionItem}
-                      titleStyle={styles.accordionTitle}
-                    >
-                      <ScrollView style={styles.accordionContent}>
-                        {isTeamLoading ? (
-                          <List.Item title="로딩 중..." />
-                        ) : (
-                          filteredTeams?.map((teamItem: any) => (
-                            <List.Item
-                              key={teamItem.id}
-                              title={teamItem.team_name}
-                              titleStyle={styles.listItemTitle}
-                              onPress={() => {
-                                setTeam({ 
-                                  key: teamItem.id, 
-                                  value: teamItem.team_name 
-                                });
-                                setExpandedAccordion(null);
-                              }}
-                            />
-                          )) || (
-                            <List.Item 
-                              title={filteredTeams.length === 0 ? '해당 지역에 팀이 없습니다' : '데이터가 없습니다'} 
-                            />
+                {/* Region and Team Selection (only for zp_name search) */}
+                {selectMenu.value === 'zp_name' && (
+                  <View style={styles.dropdownSection}>
+                    {/* Region Dropdown */}
+                    <View style={styles.dropdownContainer}>
+                      <Text style={styles.label}>지역</Text>
+                      <TouchableOpacity
+                        style={styles.dropdown}
+                        onPress={() =>
+                          setExpandedAccordion(
+                            expandedAccordion === 'region' ? null : 'region',
                           )
-                        )}
-                      </ScrollView>
-                    </List.Accordion>
-                  )}
-                </List.AccordionGroup>
-              </View>
-            )}
+                        }
+                      >
+                        <Text style={styles.dropdownText}>
+                          {selectedRegion.value || '지역을 선택해주세요'}
+                        </Text>
+                        <Text style={styles.dropdownIcon}>
+                          {expandedAccordion === 'region' ? '▲' : '▼'}
+                        </Text>
+                      </TouchableOpacity>
 
-            {/* Search Input */}
-            <View style={styles.searchSection}>
-              <TextInput
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                placeholder={selectMenu.value === 'zp_name' ? '국소명' : '통합시설코드'}
-                mode="outlined"
-                returnKeyType="search"
-                onSubmitEditing={handleSearch}
-                style={styles.searchInput}
-                textColor={BRAND_COLORS.text}
-                right={
-                  <TextInput.Icon
-                    icon="magnify"
-                    size={20}
-                    onPress={handleSearch}
-                  />
-                }
-              />
-            </View>
-
-            {/* Search Results Header */}
-            <View style={styles.resultsHeader}>
-              <Text variant="titleMedium" style={styles.resultsTitle}>
-                검색 결과
-              </Text>
-              <Text variant="bodyMedium" style={styles.resultsCount}>
-                {result.results?.length || 0}/{result.count || 0}
-              </Text>
-            </View>
-
-            {/* Search Results */}
-            <View style={styles.resultsContainer}>
-              <FlatList
-                data={result?.results || []}
-                renderItem={({ item }) => {
-                  console.log('FlatList renderItem called with item:', item);
-                  return (
-                    <TouchableOpacity
-                      onPress={() => handleSelectLocation(item.id, item.zp_name)}
-                      style={styles.resultItem}
-                    >
-                      <View style={styles.resultContent}>
-                        <Icon
-                          name="location-on"
-                          size={20}
-                          color={
-                            item.zp_name === searchLocation.label
-                              ? BRAND_COLORS.primary
-                              : BRAND_COLORS.textSecondary
-                          }
-                          style={styles.locationIcon}
-                        />
-                        <View style={styles.resultText}>
-                          <Text variant="bodySmall" style={styles.resultCode}>
-                            [{item.zp_code}]
-                          </Text>
-                          <Text variant="titleMedium" style={styles.resultName}>
-                            {item.zp_name}
-                          </Text>
-                          <Text variant="bodySmall" style={styles.resultTeam}>
-                            {item.zp_manage_team}
-                          </Text>
+                      {expandedAccordion === 'region' && (
+                        <View style={styles.dropdownOptions}>
+                          <ScrollView
+                            style={styles.dropdownScrollView}
+                            nestedScrollEnabled
+                          >
+                            {isTeamLoading ? (
+                              <View style={styles.dropdownOption}>
+                                <Text style={styles.dropdownOptionText}>
+                                  로딩 중...
+                                </Text>
+                              </View>
+                            ) : (
+                              uniqueRegions?.map(
+                                (regionItem: any, index: number) => (
+                                  <TouchableOpacity
+                                    key={index}
+                                    style={[
+                                      styles.dropdownOption,
+                                      index === uniqueRegions.length - 1 &&
+                                        styles.dropdownOptionLast,
+                                    ]}
+                                    onPress={() => {
+                                      setSelectedRegion({
+                                        key: regionItem.key,
+                                        value: regionItem.value,
+                                      });
+                                      setTeam({ key: 0, value: '' }); // 지역 변경시 팀 초기화
+                                      setExpandedAccordion(null);
+                                    }}
+                                  >
+                                    <Text style={styles.dropdownOptionText}>
+                                      {regionItem.value}
+                                    </Text>
+                                  </TouchableOpacity>
+                                ),
+                              ) || (
+                                <View style={styles.dropdownOption}>
+                                  <Text style={styles.dropdownOptionText}>
+                                    데이터가 없습니다
+                                  </Text>
+                                </View>
+                              )
+                            )}
+                          </ScrollView>
                         </View>
-                      </View>
-                    </TouchableOpacity>
-                  );
-                }}
-                style={styles.resultsList}
-                keyExtractor={(item, index) => `${item.id}-${index}`}
-                ListEmptyComponent={
-                  <View style={styles.emptyContainer}>
-                    <Text variant="bodyMedium" style={styles.emptyText}>
-                      검색 결과가 없습니다.
-                    </Text>
-                  </View>
-                }
-                showsVerticalScrollIndicator={false}
-                onEndReached={fetchNextPage}
-                onEndReachedThreshold={0.3}
-              />
-            </View>
-          </View>
-        </View>
-      </Modal>
+                      )}
+                    </View>
 
-      <Snackbar
-        visible={snackbarVisible}
-        onDismiss={() => setSnackbarVisible(false)}
-        duration={3000}
-      >
-        {snackbarMessage}
-      </Snackbar>
+                    {/* Team Dropdown */}
+                    {selectedRegion.value !== '' && (
+                      <View style={styles.dropdownContainer}>
+                        <Text style={styles.label}>팀</Text>
+                        <TouchableOpacity
+                          style={styles.dropdown}
+                          onPress={() =>
+                            setExpandedAccordion(
+                              expandedAccordion === 'team' ? null : 'team',
+                            )
+                          }
+                        >
+                          <Text style={styles.dropdownText}>
+                            {team.value || '팀을 선택해주세요'}
+                          </Text>
+                          <Text style={styles.dropdownIcon}>
+                            {expandedAccordion === 'team' ? '▲' : '▼'}
+                          </Text>
+                        </TouchableOpacity>
+
+                        {expandedAccordion === 'team' && (
+                          <View style={styles.dropdownOptions}>
+                            <ScrollView
+                              style={styles.dropdownScrollView}
+                              nestedScrollEnabled
+                            >
+                              {isTeamLoading ? (
+                                <View style={styles.dropdownOption}>
+                                  <Text style={styles.dropdownOptionText}>
+                                    로딩 중...
+                                  </Text>
+                                </View>
+                              ) : (
+                                filteredTeams?.map(
+                                  (teamItem: any, index: number) => (
+                                    <TouchableOpacity
+                                      key={teamItem.id}
+                                      style={[
+                                        styles.dropdownOption,
+                                        index === filteredTeams.length - 1 &&
+                                          styles.dropdownOptionLast,
+                                      ]}
+                                      onPress={() => {
+                                        setTeam({
+                                          key: teamItem.id,
+                                          value: teamItem.team_name,
+                                        });
+                                        setExpandedAccordion(null);
+                                      }}
+                                    >
+                                      <Text style={styles.dropdownOptionText}>
+                                        {teamItem.team_name}
+                                      </Text>
+                                    </TouchableOpacity>
+                                  ),
+                                ) || (
+                                  <View style={styles.dropdownOption}>
+                                    <Text style={styles.dropdownOptionText}>
+                                      {filteredTeams.length === 0
+                                        ? '해당 지역에 팀이 없습니다'
+                                        : '데이터가 없습니다'}
+                                    </Text>
+                                  </View>
+                                )
+                              )}
+                            </ScrollView>
+                          </View>
+                        )}
+                      </View>
+                    )}
+                  </View>
+                )}
+
+                {/* Search Input */}
+                <View style={styles.searchSection}>
+                  <TextInput
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                    placeholder={
+                      selectMenu.value === 'zp_name' ? '국소명' : '통합시설코드'
+                    }
+                    mode="outlined"
+                    returnKeyType="search"
+                    onSubmitEditing={handleSearch}
+                    style={styles.searchInput}
+                    textColor={COLORS.text}
+                    outlineColor={COLORS.border}
+                    activeOutlineColor={COLORS.primary}
+                    placeholderTextColor={COLORS.textSecondary}
+                    right={
+                      <TextInput.Icon
+                        icon="magnify"
+                        size={20}
+                        onPress={handleSearch}
+                      />
+                    }
+                  />
+                </View>
+
+                {/* Search Results Header */}
+                <View style={styles.resultsHeader}>
+                  <Text variant="titleMedium" style={styles.resultsTitle}>
+                    검색 결과
+                  </Text>
+                  <Text variant="bodyMedium" style={styles.resultsCount}>
+                    {result.results?.length || 0}/{result.count || 0}
+                  </Text>
+                </View>
+
+                {/* Search Results */}
+                <View style={styles.resultsContainer}>
+                  <FlatList
+                    data={result?.results || []}
+                    renderItem={({ item }) => {
+                      return (
+                        <TouchableOpacity
+                          onPress={() =>
+                            handleSelectLocation(item.id, item.zp_name)
+                          }
+                          style={styles.resultItem}
+                        >
+                          <View style={styles.resultContent}>
+                            <Icon
+                              name="location-on"
+                              size={20}
+                              color={
+                                item.zp_name === searchLocation.label
+                                  ? COLORS.primary
+                                  : COLORS.textSecondary
+                              }
+                              style={styles.locationIcon}
+                            />
+                            <View style={styles.resultText}>
+                              <Text
+                                variant="bodySmall"
+                                style={styles.resultCode}
+                              >
+                                [{item.zp_code}]
+                              </Text>
+                              <Text
+                                variant="titleMedium"
+                                style={styles.resultName}
+                              >
+                                {item.zp_name}
+                              </Text>
+                              <Text
+                                variant="bodySmall"
+                                style={styles.resultTeam}
+                              >
+                                {item.zp_manage_team}
+                              </Text>
+                            </View>
+                          </View>
+                        </TouchableOpacity>
+                      );
+                    }}
+                    style={styles.resultsList}
+                    keyExtractor={(item, index) => `${item.id}-${index}`}
+                    ListEmptyComponent={
+                      <View style={styles.emptyContainer}>
+                        <Text variant="bodyMedium" style={styles.emptyText}>
+                          검색 결과가 없습니다.
+                        </Text>
+                      </View>
+                    }
+                    showsVerticalScrollIndicator={false}
+                    onEndReached={fetchNextPage}
+                    onEndReachedThreshold={0.1}
+                    removeClippedSubviews={true}
+                    ListFooterComponent={renderFooter}
+                  />
+                </View>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+        {/* Snackbar inside Modal */}
+        <Snackbar
+          visible={snackbarVisible}
+          onDismiss={() => setSnackbarVisible(false)}
+          duration={3000}
+          style={styles.snackbar}
+        >
+          {snackbarMessage}
+        </Snackbar>
+      </Modal>
     </>
   );
 };
@@ -428,10 +564,11 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     width: scale(320),
-    maxHeight: verticalScale(500),
+    height: verticalScale(500),
     backgroundColor: 'white',
     padding: scale(16),
     borderRadius: 10,
+    overflow: 'hidden', // 내용이 모달 밖으로 벗어나지 않도록
   },
   modalHeader: {
     flexDirection: 'row',
@@ -441,77 +578,13 @@ const styles = StyleSheet.create({
   },
   headerText: {
     fontWeight: 'bold',
-    color: BRAND_COLORS.textSecondary,
+    color: COLORS.textSecondary,
   },
   segmentedButtons: {
-    marginBottom: verticalScale(16),
-  },
-  accordionSection: {
-    marginBottom: verticalScale(16),
-  },
-  accordionItem: {
-    backgroundColor: '#F5F5F5',
-    borderRadius: 8,
-    marginBottom: verticalScale(8),
-  },
-  accordionTitle: {
-    fontSize: scale(14),
-    fontWeight: 'bold',
-  },
-  accordionContent: {
-    maxHeight: verticalScale(150),
-    backgroundColor: 'white',
-  },
-  listItemTitle: {
-    fontSize: scale(12),
-  },
-  teamSection: {
-    marginBottom: verticalScale(16),
-  },
-  sectionLabel: {
-    marginBottom: verticalScale(8),
-    color: BRAND_COLORS.textSecondary,
-    fontWeight: 'bold',
-  },
-  teamSelector: {
-    position: 'relative',
-  },
-  teamButton: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: scale(12),
-    backgroundColor: '#F5F5F5',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-  },
-  teamButtonText: {
-    color: 'black',
-  },
-  teamDropdown: {
-    position: 'absolute',
-    top: '100%',
-    left: 0,
-    right: 0,
-    backgroundColor: 'white',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    zIndex: 1000,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-  },
-  teamOption: {
-    padding: scale(12),
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    marginBottom: verticalScale(12),
   },
   searchSection: {
-    marginBottom: verticalScale(16),
+    marginBottom: verticalScale(12),
   },
   searchInput: {
     backgroundColor: 'white',
@@ -520,20 +593,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: verticalScale(12),
+    marginBottom: verticalScale(8),
   },
   resultsTitle: {
     fontWeight: 'bold',
-    color: BRAND_COLORS.textSecondary,
+    color: COLORS.textSecondary,
   },
   resultsCount: {
-    color: BRAND_COLORS.textSecondary,
+    color: COLORS.textSecondary,
   },
   resultsContainer: {
-    height: verticalScale(200),
+    height: verticalScale(170),
   },
   resultsList: {
-    maxHeight: verticalScale(200),
+    height: verticalScale(170),
   },
   resultItem: {
     backgroundColor: '#F0F0F0',
@@ -552,7 +625,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   resultCode: {
-    color: BRAND_COLORS.textSecondary,
+    color: COLORS.textSecondary,
     marginBottom: verticalScale(2),
   },
   resultName: {
@@ -561,13 +634,86 @@ const styles = StyleSheet.create({
     marginBottom: verticalScale(2),
   },
   resultTeam: {
-    color: BRAND_COLORS.textSecondary,
+    color: COLORS.textSecondary,
   },
   emptyContainer: {
     paddingVertical: verticalScale(20),
     alignItems: 'center',
   },
   emptyText: {
-    color: BRAND_COLORS.textSecondary,
+    color: COLORS.textSecondary,
+  },
+  // Dropdown styles matching UseUnitScreen
+  dropdownSection: {
+    marginBottom: verticalScale(8),
+  },
+  dropdownContainer: {
+    marginBottom: verticalScale(8),
+  },
+  label: {
+    fontSize: scale(12),
+    fontWeight: 'bold',
+    color: COLORS.text,
+    marginBottom: verticalScale(8),
+  },
+  dropdown: {
+    backgroundColor: COLORS.background,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: scale(8),
+    paddingHorizontal: scale(16),
+    paddingVertical: verticalScale(10),
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  dropdownText: {
+    fontSize: scale(12),
+    color: COLORS.text,
+    flex: 1,
+  },
+  dropdownIcon: {
+    fontSize: scale(12),
+    color: COLORS.textSecondary,
+  },
+  dropdownOptions: {
+    backgroundColor: COLORS.background,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: scale(8),
+    marginTop: verticalScale(4),
+    overflow: 'hidden',
+    maxHeight: verticalScale(150), // 최대 높이 설정
+  },
+  dropdownScrollView: {
+    maxHeight: verticalScale(150), // ScrollView 최대 높이
+  },
+  dropdownOption: {
+    paddingHorizontal: scale(16),
+    paddingVertical: verticalScale(12),
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  dropdownOptionLast: {
+    borderBottomWidth: 0,
+  },
+  dropdownOptionText: {
+    fontSize: scale(12),
+    color: COLORS.text,
+  },
+  snackbar: {
+    backgroundColor: COLORS.text,
+    // bottom: verticalScale(10),
+  },
+  loadingFooter: {
+    paddingVertical: verticalScale(16),
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+  },
+  loadingText: {
+    marginLeft: scale(8),
+    fontSize: scale(14),
+    color: COLORS.textSecondary,
   },
 });

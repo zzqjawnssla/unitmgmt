@@ -7,6 +7,7 @@ import {
   getUnitLocationHistory,
   getUnitStateList,
   getUnitSubTypeList,
+  getWarehouseList,
 } from '../services/api/api';
 
 // 게시판 API 함수들 (아직 구현되지 않았다면 임시로 mock)
@@ -89,6 +90,15 @@ export const useLocations = () => {
     queryFn: getLocationList,
     staleTime: 30 * 60 * 1000, // 30 minutes - 준정적 데이터
     gcTime: 4 * 60 * 60 * 1000, // 4 hours
+  });
+};
+
+export const useWarehouses = () => {
+  return useQuery({
+    queryKey: ['warehouses'],
+    queryFn: getWarehouseList, // 창고 유형만 필터
+    staleTime: 30 * 60 * 1000, // 30 minutes -
+    gcTime: 4 * 60 * 60 * 1000,
   });
 };
 
