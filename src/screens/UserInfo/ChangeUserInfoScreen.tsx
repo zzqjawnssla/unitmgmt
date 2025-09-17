@@ -1,11 +1,10 @@
 import React, { useCallback, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View, TouchableOpacity } from 'react-native';
 import {
   Surface,
   Text,
   Appbar,
   Card,
-  List,
   Button,
   Snackbar,
   ActivityIndicator,
@@ -54,9 +53,7 @@ const ChangeUserInfoScreen: React.FC = () => {
     value: string | number;
   }>({ label: '', value: '' });
 
-  const [warehouseExpanded, setWarehouseExpanded] = useState<string | null>(
-    null,
-  );
+  const [expanded, setExpanded] = useState<string | null>(null);
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -84,7 +81,7 @@ const ChangeUserInfoScreen: React.FC = () => {
     value: string | number;
   }) => {
     setSelectedWarehouse(item);
-    setWarehouseExpanded(null);
+    setExpanded(null);
   };
 
   const showSnackbar = (message: string) => {
@@ -164,74 +161,84 @@ const ChangeUserInfoScreen: React.FC = () => {
 
         <Card style={styles.card}>
           <Card.Content>
-            <List.Section style={styles.listSection}>
-              <List.AccordionGroup
-                expandedId={warehouseExpanded}
-                onAccordionPress={id =>
-                  setWarehouseExpanded(id === warehouseExpanded ? null : id)
+            <View style={styles.dropdownSection}>
+              <Text style={styles.label}>창고 선택</Text>
+              <TouchableOpacity
+                style={styles.dropdown}
+                onPress={() =>
+                  setExpanded(expanded === 'warehouse' ? null : 'warehouse')
                 }
               >
-                <List.Accordion
-                  title={selectedWarehouse?.label || '창고를 선택하세요'}
-                  titleStyle={styles.accordionTitle}
-                  id="1"
-                  style={styles.accordion}
-                  left={props => (
-                    <List.Icon
-                      {...props}
-                      icon="warehouse"
-                      color={COLORS.primary}
-                    />
-                  )}
-                  onPress={() =>
-                    setWarehouseExpanded(warehouseExpanded === '1' ? null : '1')
-                  }
-                >
+                <View style={styles.dropdownContent}>
+                  <MaterialCommunityIcons
+                    name="warehouse"
+                    size={scale(20)}
+                    color={COLORS.primary}
+                    style={styles.dropdownIcon}
+                  />
+                  <Text style={styles.dropdownText}>
+                    {selectedWarehouse?.label || '창고를 선택하세요'}
+                  </Text>
+                  <Text style={styles.dropdownArrow}>
+                    {expanded === 'warehouse' ? '▲' : '▼'}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+
+              {expanded === 'warehouse' && (
+                <View style={styles.dropdownOptions}>
                   {listData?.map((item, index) => (
-                    <List.Item
+                    <TouchableOpacity
                       key={index}
-                      title={item.label}
-                      onPress={() => handleChangeWarehouse(item)}
-                      titleStyle={styles.listItemTitle}
-                      left={props => (
-                        <List.Icon
-                          {...props}
-                          icon="domain"
-                          color={COLORS.textSecondary}
-                        />
-                      )}
-                      right={
-                        selectedWarehouse?.value === item.value
-                          ? props => (
-                              <List.Icon
-                                {...props}
-                                icon="check"
-                                color={COLORS.primary}
-                              />
-                            )
-                          : undefined
-                      }
-                    />
-                  )) || (
-                    <List.Item
-                      title="선택 가능한 창고가 없습니다"
-                      titleStyle={[
-                        styles.listItemTitle,
-                        { color: COLORS.textTertiary },
+                      style={[
+                        styles.dropdownOption,
+                        index === (listData?.length || 0) - 1 &&
+                          styles.dropdownOptionLast,
                       ]}
-                      left={props => (
-                        <List.Icon
-                          {...props}
-                          icon="alert-circle"
-                          color={COLORS.warning}
+                      onPress={() => handleChangeWarehouse(item)}
+                    >
+                      <View style={styles.optionContent}>
+                        <MaterialCommunityIcons
+                          name="domain"
+                          size={scale(18)}
+                          color={COLORS.textSecondary}
+                          style={styles.optionIcon}
                         />
-                      )}
-                      disabled
-                    />
+                        <Text style={styles.dropdownOptionText}>
+                          {item.label}
+                        </Text>
+                        {selectedWarehouse?.value === item.value && (
+                          <MaterialCommunityIcons
+                            name="check"
+                            size={scale(18)}
+                            color={COLORS.primary}
+                          />
+                        )}
+                      </View>
+                    </TouchableOpacity>
+                  )) || (
+                    <View style={styles.dropdownOption}>
+                      <View style={styles.optionContent}>
+                        <MaterialCommunityIcons
+                          name="alert-circle"
+                          size={scale(18)}
+                          color={COLORS.warning}
+                          style={styles.optionIcon}
+                        />
+                        <Text
+                          style={[
+                            styles.dropdownOptionText,
+                            { color: COLORS.textTertiary },
+                          ]}
+                        >
+                          선택 가능한 창고가 없습니다
+                        </Text>
+                      </View>
+                    </View>
                   )}
-                </List.Accordion>
-              </List.AccordionGroup>
-            </List.Section>
+                </View>
+              )}
+            </View>
 
             <View style={styles.infoBox}>
               <MaterialCommunityIcons
@@ -335,23 +342,68 @@ const styles = StyleSheet.create({
     borderRadius: scale(12),
     backgroundColor: COLORS.background,
   },
-  listSection: {
-    paddingHorizontal: 0,
+  label: {
+    fontSize: scale(14),
+    fontWeight: '600',
+    color: COLORS.text,
+    marginBottom: verticalScale(8),
+  },
+  dropdownSection: {
     marginBottom: verticalScale(16),
   },
-  accordion: {
+  dropdown: {
     backgroundColor: COLORS.surface,
-    borderRadius: scale(8),
     borderWidth: 1,
     borderColor: COLORS.border,
+    borderRadius: scale(8),
+    paddingHorizontal: scale(16),
+    paddingVertical: verticalScale(12),
   },
-  accordionTitle: {
-    color: COLORS.text,
-    fontWeight: '600',
+  dropdownContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  listItemTitle: {
+  dropdownIcon: {
+    marginRight: scale(12),
+  },
+  dropdownText: {
+    fontSize: scale(14),
     color: COLORS.text,
-    fontWeight: '500',
+    flex: 1,
+  },
+  dropdownArrow: {
+    fontSize: scale(12),
+    color: COLORS.textSecondary,
+  },
+  dropdownOptions: {
+    backgroundColor: COLORS.background,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: scale(8),
+    marginTop: verticalScale(4),
+    overflow: 'hidden',
+  },
+  dropdownOption: {
+    paddingHorizontal: scale(16),
+    paddingVertical: verticalScale(12),
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  dropdownOptionLast: {
+    borderBottomWidth: 0,
+  },
+  dropdownOptionText: {
+    fontSize: scale(14),
+    color: COLORS.text,
+    flex: 1,
+  },
+  optionContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  optionIcon: {
+    marginRight: scale(12),
   },
   infoBox: {
     flexDirection: 'row',

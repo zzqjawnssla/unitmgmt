@@ -15,6 +15,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useAuth } from '../../store/AuthContext';
 import { api } from '../../services/api/api';
 import { SearchLocationModal } from '../../components/Search/SearchLocationModal';
+import { useWarehouses } from '../../hooks/useSelectList';
 import type { HomeStackParamList } from '../../navigation/RootStackNavigation';
 
 // KakaoTalk-style colors
@@ -26,6 +27,7 @@ const COLORS = {
   text: '#000000',
   textSecondary: '#666666',
   textTertiary: '#999999',
+  textWhite: '#FFFFFF',
   border: '#E0E0E0',
   divider: '#F0F0F0',
 };
@@ -75,6 +77,9 @@ export const UseUnitScreen: React.FC<UseUnitProps> = ({ route }) => {
   const { user } = useAuth();
   const { result, initialActionType } = route.params;
   const navigation = useNavigation();
+
+  // Fetch warehouse data for vendor selection
+  const { data: warehouses, isLoading: warehousesLoading } = useWarehouses();
 
   // Find initial action type or default to first one
   const getInitialActionType = () => {
@@ -136,6 +141,9 @@ export const UseUnitScreen: React.FC<UseUnitProps> = ({ route }) => {
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
 
+  // Focus states for TextInputs
+  const [focusedInput, setFocusedInput] = useState<string | null>(null);
+
   const showSnackbar = (message: string) => {
     setSnackbarMessage(message);
     setSnackbarVisible(true);
@@ -158,6 +166,42 @@ export const UseUnitScreen: React.FC<UseUnitProps> = ({ route }) => {
     setSelectedDelivery({ label, value });
     setExpanded(null);
     setDeliveryDesc('');
+  };
+
+  const handleSelectVendor = (warehouse: any) => {
+    setSelectedVendor({
+      label: warehouse.warehouse_name,
+      value: warehouse.id.toString(),
+    });
+    setSelectedCompany({
+      label: warehouse.operating_company || warehouse.warehouse_name,
+      value: warehouse.company_id?.toString() || warehouse.id.toString(),
+    });
+    setExpanded(null);
+  };
+
+  // Filter warehouses for repair vendors (exclude regular warehouses)
+  const getRepairVendors = () => {
+    if (!warehouses?.results || !Array.isArray(warehouses.results)) return [];
+
+    // If T/B is required, only show SKO repair centers
+    if (isRequiredTestBed) {
+      const skoRepairCenters = warehouses.results.filter(
+        (warehouse: any) =>
+          warehouse.warehouse_type === '수리사' &&
+          warehouse.operating_company === 'SKO',
+      );
+      return skoRepairCenters;
+    }
+
+    // Otherwise, show all repair centers
+    const repairCenters = warehouses.results.filter(
+      (warehouse: any) => warehouse.warehouse_type === '수리사',
+    );
+
+    // If no specific repair centers found, return all warehouses
+    // Users can choose from available warehouses for repair
+    return repairCenters.length > 0 ? repairCenters : warehouses.results;
   };
 
   const handleSearchLocation = () => {
@@ -214,11 +258,15 @@ export const UseUnitScreen: React.FC<UseUnitProps> = ({ route }) => {
 
     if (selectedActionType.value === 'repair_release') {
       if (!selectedVendor.label) {
-        showSnackbar('수리업체를 선택해주세요.');
+        showSnackbar('수리 업체를 선택해주세요.');
         return;
       }
-      if (isRequiredTestBed === true && selectedCompany.label !== 'SKO') {
-        showSnackbar('T/B 대상여부는 SKO에만 적용됩니다.');
+      if (repairDesc.trim().length < 3) {
+        showSnackbar('불량 내역을 3글자 이상 입력해주세요.');
+        return;
+      }
+      if (isRequiredTestBed && selectedCompany.label !== 'SKO') {
+        showSnackbar('T/B 대상여부는 SKO 업체에만 적용됩니다.');
         return;
       }
     }
@@ -358,6 +406,21 @@ export const UseUnitScreen: React.FC<UseUnitProps> = ({ route }) => {
     }
   }, [selectedActionType, result]);
 
+  // Reset vendor selection when T/B requirement changes
+  useEffect(() => {
+    if (selectedActionType.value === 'repair_release') {
+      // If T/B is now required but current vendor is not SKO, clear selection
+      if (
+        isRequiredTestBed &&
+        selectedCompany.label &&
+        selectedCompany.label !== 'SKO'
+      ) {
+        setSelectedVendor({ label: '', value: '' });
+        setSelectedCompany({ label: '', value: '' });
+      }
+    }
+  }, [isRequiredTestBed, selectedActionType.value, selectedCompany.label]);
+
   return (
     <Surface style={styles.container}>
       <Appbar.Header style={styles.appbar}>
@@ -380,14 +443,23 @@ export const UseUnitScreen: React.FC<UseUnitProps> = ({ route }) => {
         {/* Serial Number Input (for incoming) */}
         {selectedActionType.value === 'incoming' && (
           <View style={styles.section}>
+            <Text style={styles.label}>제조사S/N</Text>
             <TextInput
-              label="제조사S/N"
               placeholder="제조사S/N을 입력해주세요."
               value={unitSerial}
               onChangeText={setUnitSerial}
-              mode="outlined"
-              style={styles.textInput}
+              mode="flat"
+              style={[
+                styles.serialInput,
+                focusedInput === 'unitSerial' && styles.textInputActive,
+              ]}
               textColor={COLORS.text}
+              underlineColor="transparent"
+              activeUnderlineColor="transparent"
+              selectionColor={COLORS.primary}
+              cursorColor={COLORS.primary}
+              onFocus={() => setFocusedInput('unitSerial')}
+              onBlur={() => setFocusedInput(null)}
             />
           </View>
         )}
@@ -435,19 +507,30 @@ export const UseUnitScreen: React.FC<UseUnitProps> = ({ route }) => {
             </View>
 
             {['불량', '수리불가(불용)'].includes(selectedUnitState.label) && (
-              <TextInput
-                value={stateDesc}
-                onChangeText={setStateDesc}
-                placeholder={
-                  selectedUnitState.label === '불량'
-                    ? '(필수) 불량 사유를 입력해주세요.'
-                    : '(필수) 수리불가 사유를 입력해주세요.'
-                }
-                mode="outlined"
-                multiline
-                style={styles.textInput}
-                textColor={COLORS.text}
-              />
+              <>
+                <TextInput
+                  value={stateDesc}
+                  onChangeText={setStateDesc}
+                  placeholder={
+                    selectedUnitState.label === '불량'
+                      ? '불량 사유를 입력해주세요. '
+                      : '수리불가 사유를 입력해주세요.'
+                  }
+                  mode="flat"
+                  style={[
+                    styles.textInput,
+                    focusedInput === 'stateDesc' && styles.textInputActive,
+                  ]}
+                  textColor={COLORS.text}
+                  underlineColor="transparent"
+                  activeUnderlineColor="transparent"
+                  selectionColor={COLORS.primary}
+                  cursorColor={COLORS.primary}
+                  onFocus={() => setFocusedInput('stateDesc')}
+                  onBlur={() => setFocusedInput(null)}
+                />
+                <Text style={styles.requiredText}>*필수 입력사항 입니다.</Text>
+              </>
             )}
           </View>
         )}
@@ -530,19 +613,31 @@ export const UseUnitScreen: React.FC<UseUnitProps> = ({ route }) => {
             {['전진배치(집/중/통)', '차량보관'].includes(
               selectedLocation.label,
             ) && (
-              <TextInput
-                value={movementDesc}
-                onChangeText={setMovementDesc}
-                placeholder={
-                  selectedLocation.label === '차량보관'
-                    ? '(필수) 차량보관 사유를 입력해주세요.'
-                    : '(필수) 전진배치 사유를 입력해주세요.'
-                }
-                mode="outlined"
-                multiline
-                style={styles.textInput}
-                textColor={COLORS.text}
-              />
+              <>
+                <TextInput
+                  value={movementDesc}
+                  onChangeText={setMovementDesc}
+                  placeholder={
+                    selectedLocation.label === '차량보관'
+                      ? '차량보관 사유를 입력해주세요.'
+                      : '전진배치 사유를 입력해주세요.'
+                  }
+                  mode="flat"
+                  multiline
+                  style={[
+                    styles.textInput,
+                    focusedInput === 'movementDesc' && styles.textInputActive,
+                  ]}
+                  textColor={COLORS.text}
+                  underlineColor="transparent"
+                  activeUnderlineColor="transparent"
+                  selectionColor={COLORS.primary}
+                  cursorColor={COLORS.primary}
+                  onFocus={() => setFocusedInput('movementDesc')}
+                  onBlur={() => setFocusedInput(null)}
+                />
+                <Text style={styles.requiredText}>*필수 입력사항 입니다.</Text>
+              </>
             )}
           </View>
         )}
@@ -554,10 +649,20 @@ export const UseUnitScreen: React.FC<UseUnitProps> = ({ route }) => {
               value={movementDesc}
               onChangeText={setMovementDesc}
               placeholder="(선택) 출고 사유를 입력해주세요."
-              mode="outlined"
+              mode="flat"
               multiline
-              style={styles.textInput}
+              style={[
+                styles.textInput,
+                focusedInput === 'releaseMovementDesc' &&
+                  styles.textInputActive,
+              ]}
               textColor={COLORS.text}
+              underlineColor="transparent"
+              activeUnderlineColor="transparent"
+              selectionColor={COLORS.primary}
+              cursorColor={COLORS.primary}
+              onFocus={() => setFocusedInput('releaseMovementDesc')}
+              onBlur={() => setFocusedInput(null)}
             />
           </View>
         )}
@@ -565,25 +670,60 @@ export const UseUnitScreen: React.FC<UseUnitProps> = ({ route }) => {
         {/* Repair Release Specific Fields */}
         {selectedActionType.value === 'repair_release' && (
           <>
-            {/* Vendor Selection - Mock for now */}
+            {/* Vendor Selection */}
             <View style={styles.section}>
-              <Text variant="titleMedium" style={styles.label}>
-                수리업체 (Mock)
-              </Text>
-              <TouchableOpacity
-                style={styles.mockVendorButton}
-                onPress={() => {
-                  setSelectedCompany({ label: 'SKO', value: 'sko' });
-                  setSelectedVendor({
-                    label: 'SKO 수리센터',
-                    value: 'sko_repair',
-                  });
-                }}
-              >
-                <Text variant="titleMedium">
-                  {selectedVendor.label || '수리업체 선택 (Mock)'}
-                </Text>
-              </TouchableOpacity>
+              <View style={styles.dropdownSection}>
+                <Text style={styles.label}>수리 업체</Text>
+                <TouchableOpacity
+                  style={styles.dropdown}
+                  onPress={() =>
+                    setExpanded(expanded === 'vendor' ? null : 'vendor')
+                  }
+                >
+                  <Text style={styles.dropdownText}>
+                    {selectedVendor.label || '수리 업체를 선택해주세요'}
+                  </Text>
+                  <Text style={styles.dropdownIcon}>
+                    {expanded === 'vendor' ? '▲' : '▼'}
+                  </Text>
+                </TouchableOpacity>
+
+                {expanded === 'vendor' && (
+                  <View style={styles.dropdownOptions}>
+                    {warehousesLoading ? (
+                      <View style={styles.dropdownOption}>
+                        <Text style={styles.dropdownOptionText}>
+                          로딩 중...
+                        </Text>
+                      </View>
+                    ) : getRepairVendors().length > 0 ? (
+                      getRepairVendors().map(
+                        (warehouse: any, index: number) => (
+                          <TouchableOpacity
+                            key={warehouse.id}
+                            style={[
+                              styles.dropdownOption,
+                              index === getRepairVendors().length - 1 &&
+                                styles.dropdownOptionLast,
+                            ]}
+                            onPress={() => handleSelectVendor(warehouse)}
+                          >
+                            <Text style={styles.dropdownOptionText}>
+                              {warehouse.warehouse_name}
+                            </Text>
+                          </TouchableOpacity>
+                        ),
+                      )
+                    ) : (
+                      <View style={styles.dropdownOption}>
+                        <Text style={styles.dropdownOptionText}>
+                          수리 업체 리스트가 없습니다
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                )}
+              </View>
             </View>
 
             {/* T/B and Pre-rental switches */}
@@ -662,26 +802,44 @@ export const UseUnitScreen: React.FC<UseUnitProps> = ({ route }) => {
                   placeholder="송장번호 등 기타 내역을 입력해주세요."
                   value={deliveryDesc}
                   onChangeText={setDeliveryDesc}
-                  mode="outlined"
-                  style={styles.textInput}
+                  mode="flat"
+                  style={[
+                    styles.serialInput,
+                    focusedInput === 'deliveryDesc' && styles.textInputActive,
+                  ]}
                   textColor={COLORS.text}
+                  underlineColor="transparent"
+                  activeUnderlineColor="transparent"
+                  selectionColor={COLORS.primary}
+                  cursorColor={COLORS.primary}
+                  onFocus={() => setFocusedInput('deliveryDesc')}
+                  onBlur={() => setFocusedInput(null)}
                 />
               )}
             </View>
 
             {/* Repair Description */}
             <View style={styles.section}>
+              <Text style={styles.label}>불량 내역</Text>
               <TextInput
                 value={repairDesc}
                 onChangeText={setRepairDesc}
-                label="불량 내역(필수)"
                 placeholder="불량 내역을 입력해주세요."
-                mode="outlined"
+                mode="flat"
                 multiline
-                numberOfLines={5}
-                style={styles.textInput}
+                style={[
+                  styles.textInput,
+                  focusedInput === 'repairDesc' && styles.textInputActive,
+                ]}
                 textColor={COLORS.text}
+                underlineColor="transparent"
+                activeUnderlineColor="transparent"
+                selectionColor={COLORS.primary}
+                cursorColor={COLORS.primary}
+                onFocus={() => setFocusedInput('repairDesc')}
+                onBlur={() => setFocusedInput(null)}
               />
+              <Text style={styles.requiredText}>*필수 입력사항 입니다.</Text>
             </View>
           </>
         )}
@@ -749,10 +907,10 @@ const styles = StyleSheet.create({
     padding: scale(20),
   },
   section: {
-    marginBottom: verticalScale(20),
+    marginBottom: verticalScale(10),
   },
   label: {
-    fontSize: scale(16),
+    fontSize: scale(14),
     fontWeight: '600',
     color: COLORS.text,
     marginBottom: verticalScale(8),
@@ -764,12 +922,36 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     // lineHeight: scale(24),
   },
+  serialInput: {
+    backgroundColor: COLORS.primaryLight,
+    fontSize: scale(14),
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: scale(10),
+    borderTopLeftRadius: scale(10),
+    borderTopRightRadius: scale(10),
+    borderBottomLeftRadius: scale(10),
+    borderBottomRightRadius: scale(10),
+    paddingHorizontal: scale(16),
+  },
   textInput: {
-    backgroundColor: COLORS.background,
-    fontSize: scale(16),
+    backgroundColor: COLORS.primaryLight,
+    fontSize: scale(14),
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderTopLeftRadius: scale(10),
+    borderTopRightRadius: scale(10),
+    borderBottomLeftRadius: scale(10),
+    borderBottomRightRadius: scale(10),
+    paddingHorizontal: scale(16),
+    paddingVertical: verticalScale(6),
+    minHeight: verticalScale(48),
+  },
+  textInputActive: {
+    borderColor: COLORS.primary,
   },
   dropdownSection: {
-    marginBottom: verticalScale(12),
+    marginBottom: verticalScale(6),
   },
   dropdown: {
     backgroundColor: COLORS.background,
@@ -783,7 +965,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   dropdownText: {
-    fontSize: scale(16),
+    fontSize: scale(14),
     color: COLORS.text,
     flex: 1,
   },
@@ -809,7 +991,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0,
   },
   dropdownOptionText: {
-    fontSize: scale(16),
+    fontSize: scale(14),
     color: COLORS.text,
   },
   searchLocationButton: {
@@ -817,15 +999,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
     borderRadius: scale(8),
-    marginTop: verticalScale(12),
+    marginTop: verticalScale(6),
     padding: scale(16),
+    marginBottom: verticalScale(12),
   },
   searchLocationContent: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   searchLocationText: {
-    fontSize: scale(16),
+    fontSize: scale(14),
     color: COLORS.textSecondary,
   },
   searchIcon: {
@@ -837,22 +1020,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   selectedLocationText: {
-    fontSize: scale(16),
+    fontSize: scale(14),
     fontWeight: '600',
     color: COLORS.text,
     flex: 1,
     marginRight: scale(8),
-  },
-  mockVendorButton: {
-    backgroundColor: COLORS.background,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    padding: scale(16),
-    borderRadius: scale(8),
-  },
-  mockVendorText: {
-    fontSize: scale(16),
-    color: COLORS.text,
   },
   switchContainer: {
     backgroundColor: COLORS.background,
@@ -861,7 +1033,7 @@ const styles = StyleSheet.create({
     borderRadius: scale(8),
     paddingHorizontal: scale(20),
     paddingVertical: verticalScale(16),
-    marginBottom: verticalScale(20),
+    marginBottom: verticalScale(10),
   },
   switchItem: {
     flexDirection: 'row',
@@ -870,7 +1042,7 @@ const styles = StyleSheet.create({
     marginVertical: verticalScale(8),
   },
   switchLabel: {
-    fontSize: scale(16),
+    fontSize: scale(14),
     fontWeight: '500',
     color: COLORS.text,
   },
@@ -884,8 +1056,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   submitButtonText: {
-    fontSize: scale(16),
+    fontSize: scale(14),
     fontWeight: '600',
+    color: COLORS.textWhite,
   },
   snackbar: {
     backgroundColor: COLORS.text,
@@ -893,5 +1066,13 @@ const styles = StyleSheet.create({
   },
   snackbarText: {
     color: COLORS.background,
+  },
+  requiredText: {
+    fontSize: scale(12),
+    color: COLORS.primary,
+    fontWeight: '600',
+    marginTop: verticalScale(4),
+    marginRight: scale(8),
+    textAlign: 'right',
   },
 });
