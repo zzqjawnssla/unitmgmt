@@ -830,7 +830,8 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
     padding: scale(24),
     alignItems: 'center',
-    maxWidth: scale(280),
+    width: '100%',
+    // maxWidth: scale(280),
   },
   emptyIcon: {
     marginBottom: verticalScale(16),

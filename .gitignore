@@ -59,8 +59,12 @@ yarn-error.log
 # APK files (build artifacts)
 *.apk
 *.aab
+*.idsig
 
-# iOS App Bundle (build artifacts) 
+# Downloaded APKs
+android/downloaded-apks/
+
+# iOS App Bundle (build artifacts)
 Payload/
 ios/App/Payload/
 

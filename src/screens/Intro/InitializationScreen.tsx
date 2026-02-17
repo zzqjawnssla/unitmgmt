@@ -151,7 +151,7 @@ const InitializationScreen: React.FC<Props> = ({ navigation }) => {
         duration={2000}
         style={styles.snackbar}
       >
-        {snackbarMessage}
+        <Text style={styles.snackbarText}>{snackbarMessage}</Text>
       </Snackbar>
     </Surface>
   );
@@ -185,6 +185,9 @@ const styles = StyleSheet.create({
   },
   snackbar: {
     backgroundColor: '#333',
+  },
+  snackbarText: {
+    color: '#FFF',
   },
 });
 

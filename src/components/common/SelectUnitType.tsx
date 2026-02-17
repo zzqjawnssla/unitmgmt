@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { Text } from 'react-native-paper';
 import { scale, verticalScale } from 'react-native-size-matters';
 import { useSubTypes, useDetailTypes } from '../../hooks/useSelectList.ts';
@@ -123,26 +123,32 @@ const SelectionItem: React.FC<SelectionItemProps> = ({
 
     {expanded && (
       <View style={styles.optionsList}>
-        {options && options.length > 0 ? (
-          options.map((item: any, index: number) => (
-            <TouchableOpacity
-              key={index}
-              style={[
-                styles.optionItem,
-                index === options.length - 1 && styles.optionItemLast,
-              ]}
-              onPress={() => onSelect(item)}
-            >
-              <Text style={styles.optionText}>{renderTitle(item)}</Text>
-            </TouchableOpacity>
-          ))
-        ) : (
-          <View style={styles.optionItem}>
-            <Text style={styles.optionTextDisabled}>
-              선택할 수 있는 옵션이 없습니다
-            </Text>
-          </View>
-        )}
+        <ScrollView
+          style={styles.optionsScrollView}
+          nestedScrollEnabled={true}
+          showsVerticalScrollIndicator={true}
+        >
+          {options && options.length > 0 ? (
+            options.map((item: any, index: number) => (
+              <TouchableOpacity
+                key={index}
+                style={[
+                  styles.optionItem,
+                  index === options.length - 1 && styles.optionItemLast,
+                ]}
+                onPress={() => onSelect(item)}
+              >
+                <Text style={styles.optionText}>{renderTitle(item)}</Text>
+              </TouchableOpacity>
+            ))
+          ) : (
+            <View style={styles.optionItem}>
+              <Text style={styles.optionTextDisabled}>
+                선택할 수 있는 옵션이 없습니다
+              </Text>
+            </View>
+          )}
+        </ScrollView>
       </View>
     )}
   </View>
@@ -365,6 +371,9 @@ const styles = StyleSheet.create({
     borderRadius: scale(8),
     overflow: 'hidden',
     maxHeight: verticalScale(200),
+  },
+  optionsScrollView: {
+    flexGrow: 0,
   },
   optionItem: {
     paddingHorizontal: scale(14),

@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { TouchableOpacity, View, StyleSheet } from 'react-native';
-import { Text, Button } from 'react-native-paper';
+import { Text, Button, Snackbar } from 'react-native-paper';
 import { scale, verticalScale } from 'react-native-size-matters';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
 import type {
@@ -13,7 +13,9 @@ const BRAND_COLORS = {
   primary: '#F47725',
   background: '#FCFCFC',
   surface: '#FFFFFF',
+  text: '#000000',
   textSecondary: '#666666',
+  disabled: '#CCCCCC',
   light: 'rgba(244, 119, 37, 0.1)',
 };
 
@@ -37,6 +39,7 @@ const actionTypeMapping: { [key: string]: string } = {
 export const ActionButtons: React.FC<ActionButtonsProps> = ({ result }) => {
   const navigation =
     useNavigation<NavigationProp<HomeStackParamList & SearchStackParamList>>();
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
 
   // Define available actions based on current unit movement status
   const buttonMap: ButtonMap = {
@@ -98,16 +101,27 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({ result }) => {
         <Button
           key={index}
           mode="contained"
-          onPress={() => navigateToUseUnitScreen(buttonText)}
+          // onPress={() => navigateToUseUnitScreen(buttonText)}
+          onPress={() => setSnackbarVisible(true)}
           style={[
             styles.actionButton,
-            { backgroundColor: BRAND_COLORS.primary },
+            { backgroundColor: BRAND_COLORS.disabled },
           ]}
           labelStyle={styles.actionButtonText}
         >
           {buttonText}
         </Button>
       ))}
+
+      <Snackbar
+        visible={snackbarVisible}
+        onDismiss={() => setSnackbarVisible(false)}
+        duration={2000}
+        style={styles.snackbar}
+        theme={{ colors: { primary: BRAND_COLORS.primary } }}
+      >
+        <Text style={styles.snackbarText}>현재 비활성화된 기능입니다.</Text>
+      </Snackbar>
     </View>
   );
 };
@@ -144,5 +158,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#C62828',
     fontWeight: 'bold',
+  },
+  snackbar: {
+    backgroundColor: BRAND_COLORS.text,
+    marginBottom: verticalScale(20),
+    width: '100%',
+  },
+  snackbarText: {
+    color: BRAND_COLORS.background,
   },
 });

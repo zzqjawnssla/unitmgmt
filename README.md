@@ -21,7 +21,8 @@ React Native 기반 단위 관리 애플리케이션
 - `react-native-bottom-tabs`
 
 ### 상태 관리
-- `recoil`
+- `AuthContext` (커스텀 컨텍스트)
+- `react-query`
 
 ### UI 컴포넌트
 - `react-native-paper`

@@ -1,18 +1,20 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
-// import { NewAppScreen } from '@react-native/new-app-screen';
-import { StatusBar, StyleSheet, useColorScheme, View } from 'react-native';
+import React, { useEffect } from 'react';
+import {
+  AppState,
+  AppStateStatus,
+  StatusBar,
+  StyleSheet,
+  useColorScheme,
+  View,
+  Platform,
+} from 'react-native';
 import {
   SafeAreaProvider,
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
 import { Provider as PaperProvider } from 'react-native-paper';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import ScreenshotPrevent from 'react-native-screenshot-prevent';
 import RootNavigation from './src/navigation/RootStackNavigation';
 import { AuthContextProvider } from './src/store/AuthContext.tsx';
 
@@ -21,11 +23,11 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 2,
-      retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
-      staleTime: 15 * 60 * 1000, // 15 minutes default
-      gcTime: 60 * 60 * 1000, // 1 hour cache retention
-      refetchOnWindowFocus: false, // Disable refetch on window focus for mobile
-      refetchOnReconnect: true, // Refetch when network reconnects
+      retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
+      staleTime: 15 * 60 * 1000,
+      gcTime: 60 * 60 * 1000,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: true,
     },
   },
 });
@@ -36,6 +38,48 @@ if (__DEV__) {
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
+  const envMode = process.env.ENV_MODE;
+
+  useEffect(() => {
+    // 프로덕션 환경에서만 스크린샷 방지 활성화
+    if (Platform.OS === 'ios' && envMode === 'prd') {
+      try {
+        ScreenshotPrevent.enableSecureView();
+        console.log(
+          'Screenshot protemction enabled for production environment',
+        );
+      } catch (error) {
+        console.error('Failed to enable screenshot protection:', error);
+      }
+    } else if (Platform.OS === 'ios' && envMode === 'dev') {
+      console.log('Screenshot protection disabled for development environment');
+    }
+  }, [envMode]);
+
+  useEffect(() => {
+    // 앱 상태 변화 감지 (프로덕션에서만)
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      if (
+        nextAppState === 'active' &&
+        Platform.OS === 'ios' &&
+        envMode === 'prd'
+      ) {
+        try {
+          ScreenshotPrevent.enableSecureView();
+          console.log('Screenshot protection re-enabled on app activation');
+        } catch (error) {
+          console.error('Failed to re-enable screenshot protection:', error);
+        }
+      }
+    };
+
+    const subscription = AppState.addEventListener(
+      'change',
+      handleAppStateChange,
+    );
+
+    return () => subscription?.remove();
+  }, [envMode]);
 
   return (
     <PaperProvider>
@@ -52,10 +96,6 @@ function AppContent() {
 
   return (
     <View style={styles.container}>
-      {/*<NewAppScreen*/}
-      {/*  templateFileName="App.tsx"*/}
-      {/*  safeAreaInsets={safeAreaInsets}*/}
-      {/*/>*/}
       <QueryClientProvider client={queryClient}>
         <AuthContextProvider>
           <RootNavigation />

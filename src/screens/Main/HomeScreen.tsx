@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   View,
   StyleSheet,
+  Image,
 } from 'react-native';
 import { Surface, Text, useTheme, Appbar } from 'react-native-paper';
 import { useAuth } from '../../store/AuthContext.tsx';
@@ -18,6 +19,9 @@ import { useMyUnits, useLatestPosts } from '../../hooks/useSelectList.ts';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/RootStackNavigation.tsx';
+
+const MAIN_LOGO = require('../../assets/images/main_logo.png');
+const HEADER_LOGO = require('../../assets/images/header_logo.png');
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -132,7 +136,7 @@ const HomeScreen: React.FC = () => {
   useFocusEffect(
     useCallback(() => {
       setIsFocused(true);
-      
+
       const onBackPress = () => {
         return true; // Block back button on Android and iOS
       };
@@ -141,7 +145,7 @@ const HomeScreen: React.FC = () => {
         'hardwareBackPress',
         onBackPress,
       );
-      
+
       return () => {
         setIsFocused(false);
         subscription?.remove();
@@ -291,10 +295,13 @@ const HomeScreen: React.FC = () => {
   return (
     <Surface style={styles.container}>
       <Appbar.Header style={styles.appbar}>
-        <Appbar.Content
-          title="유니트 관리시스템"
-          titleStyle={styles.appbarTitle}
-        />
+        <View style={styles.appbarContent}>
+          <Image
+            source={HEADER_LOGO}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+        </View>
       </Appbar.Header>
 
       <ScrollView
@@ -352,6 +359,16 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
+  appbarContent: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  logo: {
+    width: scale(220),
+    height: verticalScale(100),
+  },
   appbarTitle: {
     color: COLORS.text,
     fontWeight: '800',
@@ -377,6 +394,7 @@ const styles = StyleSheet.create({
     marginBottom: verticalScale(20),
   },
   greetingRow: {
+    justifyContent: 'center',
     flexDirection: 'row',
     alignItems: 'center',
     gap: scale(8),

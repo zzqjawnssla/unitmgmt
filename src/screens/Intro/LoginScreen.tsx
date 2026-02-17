@@ -327,7 +327,7 @@ export const LoginScreen: React.FC = () => {
           style={styles.snackbar}
           theme={{ colors: { primary: BRAND_COLORS.primary } }}
         >
-          {snackbarMessage}
+          <Text style={styles.snackbarText}>{snackbarMessage}</Text>
         </Snackbar>
       </Surface>
     </TouchableWithoutFeedback>
@@ -446,6 +446,9 @@ const styles = StyleSheet.create({
   },
   snackbar: {
     marginBottom: verticalScale(24),
-    // backgroundColor: BRAND_COLORS.primary,
+    backgroundColor: BRAND_COLORS.text,
+  },
+  snackbarText: {
+    color: BRAND_COLORS.background,
   },
 });
