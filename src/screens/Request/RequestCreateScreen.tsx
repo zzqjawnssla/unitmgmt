@@ -12,21 +12,9 @@ import {
 import { scale, verticalScale } from 'react-native-size-matters';
 import { useAuth } from '../../store/AuthContext';
 import { createRentalRequest, getRentalWarehouses } from '../../services/api/api';
+import { COLORS } from '../../constants/colors';
+import { getLocationDisplay } from '../../utils/locationDisplay';
 import type { SearchStackParamList } from '../../navigation/RootStackNavigation';
-
-// KakaoTalk-style colors
-const COLORS = {
-  primary: '#F47725',
-  primaryLight: 'rgba(244, 119, 37, 0.1)',
-  background: '#FFFFFF',
-  surface: '#F9F9F9',
-  text: '#000000',
-  textSecondary: '#666666',
-  textTertiary: '#999999',
-  textWhite: '#FFFFFF',
-  border: '#E0E0E0',
-  divider: '#F0F0F0',
-};
 
 type RequestCreateScreenRouteProp = RouteProp<SearchStackParamList, 'RequestCreateScreen'>;
 
@@ -76,25 +64,6 @@ export const RequestCreateScreen: React.FC<Props> = ({ route }) => {
     };
     fetchWarehouses();
   }, []);
-
-  // Helper to get location display text
-  const getLocationDisplay = () => {
-    const history = result?.last_manage_history;
-    if (!history) return '-';
-
-    const location = history.location || '';
-    const contextInstance = history.location_context_instance;
-
-    if (contextInstance) {
-      const name =
-        contextInstance.warehouse_name ||
-        contextInstance.zp_name ||
-        contextInstance.name ||
-        '';
-      return name ? `${location} (${name})` : location;
-    }
-    return location;
-  };
 
   // Helper to get reviewer display text (검토 담당자)
   const getReviewerDisplay = () => {
@@ -173,7 +142,7 @@ export const RequestCreateScreen: React.FC<Props> = ({ route }) => {
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>현재위치</Text>
               <Text style={styles.infoValue} numberOfLines={1} ellipsizeMode="tail">
-                {getLocationDisplay()}
+                {getLocationDisplay(result?.last_manage_history)}
               </Text>
             </View>
             <View style={styles.infoDivider} />

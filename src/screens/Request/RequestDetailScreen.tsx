@@ -13,40 +13,16 @@ import {
 import { scale, verticalScale } from 'react-native-size-matters';
 import { useAuth } from '../../store/AuthContext';
 import { getRentalRequestDetail, cancelRentalRequest } from '../../services/api/api';
+import { COLORS, STATUS_COLORS } from '../../constants/colors';
+import { getLocationDisplay } from '../../utils/locationDisplay';
+import { formatDateTime } from '../../utils/formatDate';
 import type { UserinfoStackParamList } from '../../navigation/RootStackNavigation';
-
-// KakaoTalk-style colors
-const COLORS = {
-  primary: '#F47725',
-  primaryLight: 'rgba(244, 119, 37, 0.1)',
-  background: '#FFFFFF',
-  surface: '#F9F9F9',
-  text: '#000000',
-  textSecondary: '#666666',
-  textTertiary: '#999999',
-  textWhite: '#FFFFFF',
-  border: '#E0E0E0',
-  divider: '#F0F0F0',
-};
-
-const STATUS_COLORS: Record<string, string> = {
-  pending: '#FF9500',
-  approved: '#4CAF50',
-  rejected: '#F44336',
-  cancelled: '#999999',
-};
 
 type RequestDetailScreenRouteProp = RouteProp<UserinfoStackParamList, 'RequestDetailScreen'>;
 
 interface Props {
   route: RequestDetailScreenRouteProp;
 }
-
-const formatDate = (dateStr: string) => {
-  if (!dateStr) return '-';
-  const date = new Date(dateStr);
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-};
 
 export const RequestDetailScreen: React.FC<Props> = ({ route }) => {
   const { user } = useAuth();
@@ -76,24 +52,6 @@ export const RequestDetailScreen: React.FC<Props> = ({ route }) => {
       fetchDetail();
     }, [fetchDetail]),
   );
-
-  const getLocationDisplay = () => {
-    const history = data?.unit_info?.last_manage_history;
-    if (!history) return '-';
-
-    const location = history.location || '';
-    const contextInstance = history.location_context_instance;
-
-    if (contextInstance) {
-      const name =
-        contextInstance.warehouse_name ||
-        contextInstance.zp_name ||
-        contextInstance.name ||
-        '';
-      return name ? `${location} (${name})` : location;
-    }
-    return location;
-  };
 
   const handleCancel = () => {
     Alert.alert(
@@ -173,7 +131,7 @@ export const RequestDetailScreen: React.FC<Props> = ({ route }) => {
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>현재위치</Text>
                 <Text style={styles.infoValue} numberOfLines={1} ellipsizeMode="tail">
-                  {getLocationDisplay()}
+                  {getLocationDisplay(data?.unit_info?.last_manage_history)}
                 </Text>
               </View>
             </View>
@@ -185,7 +143,7 @@ export const RequestDetailScreen: React.FC<Props> = ({ route }) => {
             <View style={styles.infoCard}>
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>요청일시</Text>
-                <Text style={styles.infoValue}>{formatDate(data.created_at)}</Text>
+                <Text style={styles.infoValue}>{formatDateTime(data.created_at)}</Text>
               </View>
               <View style={styles.infoDivider} />
               <View style={styles.infoRow}>
@@ -252,7 +210,7 @@ export const RequestDetailScreen: React.FC<Props> = ({ route }) => {
                   <View style={styles.infoDivider} />
                   <View style={styles.infoRow}>
                     <Text style={styles.infoLabel}>처리 일시</Text>
-                    <Text style={styles.infoValue}>{formatDate(data.reviewed_at)}</Text>
+                    <Text style={styles.infoValue}>{formatDateTime(data.reviewed_at)}</Text>
                   </View>
                 </>
               )}
@@ -270,7 +228,7 @@ export const RequestDetailScreen: React.FC<Props> = ({ route }) => {
                   <View style={styles.infoDivider} />
                   <View style={styles.infoRow}>
                     <Text style={styles.infoLabel}>처리 일시</Text>
-                    <Text style={styles.infoValue}>{formatDate(data.reviewed_at)}</Text>
+                    <Text style={styles.infoValue}>{formatDateTime(data.reviewed_at)}</Text>
                   </View>
                 </>
               )}

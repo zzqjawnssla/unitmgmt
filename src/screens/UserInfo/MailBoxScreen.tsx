@@ -13,6 +13,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { scale, verticalScale } from 'react-native-size-matters';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { getRentalRequests } from '../../services/api/api';
+import { formatDate } from '../../utils/formatDate';
 import type { UserinfoStackParamList } from '../../navigation/RootStackNavigation';
 
 type NavigationProp = NativeStackNavigationProp<UserinfoStackParamList>;
@@ -41,12 +42,6 @@ const STATUS_LABELS: Record<string, string> = {
   approved: '승인',
   rejected: '반려',
   cancelled: '취소',
-};
-
-const formatDate = (dateStr: string) => {
-  if (!dateStr) return '-';
-  const date = new Date(dateStr);
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 };
 
 const MailBoxScreen: React.FC = () => {

@@ -13,21 +13,9 @@ import {
 } from 'react-native-paper';
 import { scale, verticalScale } from 'react-native-size-matters';
 import { getRentalRequestDetail, approveRentalRequest, rejectRentalRequest } from '../../services/api/api';
+import { COLORS } from '../../constants/colors';
+import { getLocationDisplay } from '../../utils/locationDisplay';
 import type { UserinfoStackParamList } from '../../navigation/RootStackNavigation';
-
-// KakaoTalk-style colors
-const COLORS = {
-  primary: '#F47725',
-  primaryLight: 'rgba(244, 119, 37, 0.1)',
-  background: '#FFFFFF',
-  surface: '#F9F9F9',
-  text: '#000000',
-  textSecondary: '#666666',
-  textTertiary: '#999999',
-  textWhite: '#FFFFFF',
-  border: '#E0E0E0',
-  divider: '#F0F0F0',
-};
 
 const shippingMethods = [
   { value: 'pickup', label: '직접수령' },
@@ -90,24 +78,6 @@ export const RequestReviewScreen: React.FC<Props> = ({ route }) => {
       fetchDetail();
     }, [requestId]),
   );
-
-  const getLocationDisplay = () => {
-    const history = data?.unit_info?.last_manage_history;
-    if (!history) return '-';
-
-    const location = history.location || '';
-    const contextInstance = history.location_context_instance;
-
-    if (contextInstance) {
-      const name =
-        contextInstance.warehouse_name ||
-        contextInstance.zp_name ||
-        contextInstance.name ||
-        '';
-      return name ? `${location} (${name})` : location;
-    }
-    return location;
-  };
 
   const handleSelectShippingMethod = (method: { value: string; label: string }) => {
     setSelectedShippingMethod(method);
@@ -191,7 +161,7 @@ export const RequestReviewScreen: React.FC<Props> = ({ route }) => {
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>현재위치</Text>
                 <Text style={styles.infoValue} numberOfLines={2}>
-                  {getLocationDisplay()}
+                  {getLocationDisplay(data?.unit_info?.last_manage_history)}
                 </Text>
               </View>
               <View style={styles.infoDivider} />
