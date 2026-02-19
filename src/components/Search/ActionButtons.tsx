@@ -7,6 +7,7 @@ import type {
   HomeStackParamList,
   SearchStackParamList,
 } from '../../navigation/RootStackNavigation';
+import { useAuth } from '../../store/AuthContext';
 
 // Brand Colors
 const BRAND_COLORS = {
@@ -39,6 +40,7 @@ const actionTypeMapping: { [key: string]: string } = {
 export const ActionButtons: React.FC<ActionButtonsProps> = ({ result }) => {
   const navigation =
     useNavigation<NavigationProp<HomeStackParamList & SearchStackParamList>>();
+  const { user } = useAuth();
   const [snackbarVisible, setSnackbarVisible] = useState(false);
 
   // Define available actions based on current unit movement status
@@ -71,6 +73,13 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({ result }) => {
         '잘못 된 상태의 유니트 입니다.\n 관리자에게 문의 주세요.',
       ]
     );
+  };
+
+  const shouldShowRentalButton = (): boolean => {
+    const location = result?.last_manage_history?.location;
+    const warehouseManageTeam =
+      result?.last_manage_history?.location_context_instance?.warehouse_manage_team;
+    return location === '창고' && warehouseManageTeam !== user?.team;
   };
 
   const availableButtons = getAvailableButtons();
@@ -112,6 +121,20 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({ result }) => {
           {buttonText}
         </Button>
       ))}
+
+      {shouldShowRentalButton() && (
+        <Button
+          mode="contained"
+          onPress={() => navigation.navigate('RequestCreateScreen', { result })}
+          style={[
+            styles.actionButton,
+            { backgroundColor: BRAND_COLORS.primary },
+          ]}
+          labelStyle={styles.actionButtonText}
+        >
+          대여 요청
+        </Button>
+      )}
 
       <Snackbar
         visible={snackbarVisible}
