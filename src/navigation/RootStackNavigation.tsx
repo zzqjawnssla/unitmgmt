@@ -43,6 +43,11 @@ import ChangeUserInfoScreen from '../screens/UserInfo/ChangeUserInfoScreen';
 import MailBoxScreen from '../screens/UserInfo/MailBoxScreen';
 import MyUnitListScreen from '../screens/UserInfo/MyUnitListScreen';
 
+// Request Screens
+import { RequestCreateScreen } from '../screens/Request/RequestCreateScreen';
+import { RequestDetailScreen } from '../screens/Request/RequestDetailScreen';
+import { RequestReviewScreen } from '../screens/Request/RequestReviewScreen';
+
 import { useAuth } from '../store/AuthContext.tsx';
 
 // Navigation Types
@@ -127,6 +132,9 @@ export type SearchStackParamList = {
     result: any;
     initialActionType?: string;
   };
+  RequestCreateScreen: {
+    result: any;
+  };
 };
 
 export type TransStackParamList = {};
@@ -135,6 +143,12 @@ export type UserinfoStackParamList = {
   ChangeUserInfoScreen: undefined;
   MailBoxScreen: undefined;
   MyUnitListScreen: undefined;
+  RequestDetailScreen: {
+    requestId: number;
+  };
+  RequestReviewScreen: {
+    requestId: number;
+  };
 };
 
 // Convenience type for navigation props
@@ -272,7 +286,7 @@ const HomeStackNavigation = () => {
 // Intro Stack Navigator
 const IntroStackNavigator = ({ route }: any) => {
   const isLoggedOut = route?.params?.isLoggedOut || false;
-  
+
   return (
     <IntroStack.Navigator
       initialRouteName={isLoggedOut ? "Login" : "Initialization"}
@@ -296,13 +310,13 @@ const ServiceStackNavigator = () => {
         headerShown: false,
       }}
     >
-      <ServiceStack.Screen 
-        name="SearchUnitCountScreen" 
-        component={SearchUnitCountScreen} 
+      <ServiceStack.Screen
+        name="SearchUnitCountScreen"
+        component={SearchUnitCountScreen}
       />
-      <ServiceStack.Screen 
-        name="DetailUnitCountScreen" 
-        component={DetailUnitCountScreen} 
+      <ServiceStack.Screen
+        name="DetailUnitCountScreen"
+        component={DetailUnitCountScreen}
       />
     </ServiceStack.Navigator>
   );
@@ -316,14 +330,15 @@ const SearchStackNavigator = () => {
         headerShown: false,
       }}
     >
-      <SearchStack.Screen 
-        name="SearchResult" 
-        component={SearchResultScreen} 
+      <SearchStack.Screen
+        name="SearchResult"
+        component={SearchResultScreen}
       />
-      <SearchStack.Screen 
-        name="UseUnitScreen" 
-        component={UseUnitScreen} 
+      <SearchStack.Screen
+        name="UseUnitScreen"
+        component={UseUnitScreen}
       />
+      <SearchStack.Screen name="RequestCreateScreen" component={RequestCreateScreen} />
     </SearchStack.Navigator>
   );
 };
@@ -349,18 +364,20 @@ const UserinfoStackNavigator = () => {
         headerShown: false,
       }}
     >
-      <UserinfoStack.Screen 
-        name="ChangeUserInfoScreen" 
-        component={ChangeUserInfoScreen} 
+      <UserinfoStack.Screen
+        name="ChangeUserInfoScreen"
+        component={ChangeUserInfoScreen}
       />
-      <UserinfoStack.Screen 
-        name="MailBoxScreen" 
-        component={MailBoxScreen} 
+      <UserinfoStack.Screen
+        name="MailBoxScreen"
+        component={MailBoxScreen}
       />
-      <UserinfoStack.Screen 
-        name="MyUnitListScreen" 
-        component={MyUnitListScreen} 
+      <UserinfoStack.Screen
+        name="MyUnitListScreen"
+        component={MyUnitListScreen}
       />
+      <UserinfoStack.Screen name="RequestDetailScreen" component={RequestDetailScreen} />
+      <UserinfoStack.Screen name="RequestReviewScreen" component={RequestReviewScreen} />
     </UserinfoStack.Navigator>
   );
 };
@@ -484,10 +501,10 @@ const RootStackNavigator = () => {
           <RootStack.Screen name="BarcodeScanScreen" component={BarcodeScanScreen} />
         </>
       ) : (
-        <RootStack.Screen 
-          name="IntroStack" 
-          component={IntroStackNavigator} 
-          initialParams={{ isLoggedOut }} 
+        <RootStack.Screen
+          name="IntroStack"
+          component={IntroStackNavigator}
+          initialParams={{ isLoggedOut }}
         />
       )}
     </RootStack.Navigator>

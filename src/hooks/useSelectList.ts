@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import {
   getLocationList,
   getRegionList,
@@ -111,23 +111,26 @@ export const useUnitStates = () => {
   });
 };
 
-// 내 유닛 목록 (실시간성 필요 - 자주 변경되는 데이터)
+// 내 유닛 목록 (무한 스크롤 페이지네이션)
 export const useMyUnits = (
   location: number = 5,
   userId: number = 0,
   enabled: boolean = true,
   realTimeMode: boolean = false, // 실시간 모드 옵션
 ) => {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: ['myUnits', location, userId],
-    queryFn: () => getUnitLocationHistory(location, userId),
-    staleTime: 0, // 항상 stale - 매번 백그라운드에서 최신 데이터 fetch
-    gcTime: 5 * 60 * 1000, // 5분만 캐시 보관 (메모리 절약)
-    refetchOnMount: true, // 컴포넌트 마운트시 항상 refetch
-    refetchOnWindowFocus: true, // 앱이 포커스될 때 refetch
-    refetchOnReconnect: true, // 네트워크 재연결시 refetch
-    refetchInterval: realTimeMode ? 30 * 1000 : false, // 실시간 모드시 30초마다 polling
-    refetchIntervalInBackground: false, // 백그라운드에서는 polling 안함 (배터리 절약)
+    queryFn: ({ pageParam }) =>
+      getUnitLocationHistory(location, userId, pageParam || undefined),
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage: any) => lastPage.next || undefined,
+    staleTime: 0,
+    gcTime: 5 * 60 * 1000,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchInterval: realTimeMode ? 30 * 1000 : false,
+    refetchIntervalInBackground: false,
     enabled,
   });
 };

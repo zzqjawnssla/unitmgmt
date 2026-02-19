@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   ScrollView,
@@ -19,6 +19,7 @@ import { useMyUnits, useLatestPosts } from '../../hooks/useSelectList.ts';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/RootStackNavigation.tsx';
+import { getRentalRequestsAll } from '../../services/api/api';
 
 const MAIN_LOGO = require('../../assets/images/main_logo.png');
 const HEADER_LOGO = require('../../assets/images/header_logo.png');
@@ -43,10 +44,11 @@ const HomeScreen: React.FC = () => {
   const { user, logout } = useAuth();
   const navigation = useNavigation<HomeScreenNavigationProp>();
   const [isFocused, setIsFocused] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
 
   // Use custom hook to fetch myUnitList data with real-time updates only when focused
   const {
-    data: myUnitList,
+    data: myUnitData,
     isLoading,
     isFetching,
   } = useMyUnits(
@@ -55,6 +57,11 @@ const HomeScreen: React.FC = () => {
     !!user, // enabled
     isFocused, // realTimeMode - 화면이 포커스되었을 때만 30초마다 자동 업데이트
   );
+
+  // useInfiniteQuery 데이터에서 전체 개수 추출
+  const myUnitCount = useMemo(() => {
+    return myUnitData?.pages?.[0]?.count || 0;
+  }, [myUnitData]);
 
   // Use React Query for board data
   const {
@@ -153,6 +160,21 @@ const HomeScreen: React.FC = () => {
     }, []),
   );
 
+  // Load pending approval count when screen is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      const loadPendingCount = async () => {
+        try {
+          const data = await getRentalRequestsAll({ role: 'reviewer', status: 'pending' });
+          setPendingCount(Array.isArray(data) ? data.length : 0);
+        } catch (error) {
+          console.error('Failed to load pending count:', error);
+        }
+      };
+      loadPendingCount();
+    }, []),
+  );
+
   const renderUserInfo = () => (
     <View style={styles.userSection}>
       <View style={styles.userGreeting}>
@@ -202,7 +224,7 @@ const HomeScreen: React.FC = () => {
             <ActivityIndicator size="small" color={COLORS.primary} />
           ) : (
             <Text variant="headlineLarge" style={styles.statValue}>
-              {myUnitList?.count || 0}
+              {myUnitCount}
             </Text>
           )}
           <Text variant="bodySmall" style={styles.statUnit}>
@@ -217,7 +239,7 @@ const HomeScreen: React.FC = () => {
             결재 대기
           </Text>
           <Text variant="headlineLarge" style={styles.statValue}>
-            0
+            {pendingCount}
           </Text>
           <Text variant="bodySmall" style={styles.statUnit}>
             건

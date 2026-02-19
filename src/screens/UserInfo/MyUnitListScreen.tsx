@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { TouchableOpacity, View, FlatList, StyleSheet } from 'react-native';
 import {
   Surface,
@@ -52,15 +52,27 @@ const MyUnitListScreen: React.FC = () => {
   const { user, setSearchTerm, setSearchCode } = useAuth();
 
   const {
-    data: myUnitList,
+    data,
     isLoading,
     refetch,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
   } = useMyUnits(
     5, // location - 현장대기
     user?.user_id || 0, // userId - 로그인한 사용자 ID
     !!user, // enabled
     false, // realTimeMode
   );
+
+  // 모든 페이지의 results를 하나의 배열로 합침
+  const allUnits = useMemo(() => {
+    if (!data?.pages) return [];
+    return data.pages.flatMap((page: any) => page.results || []);
+  }, [data]);
+
+  // 전체 개수 (첫 페이지의 count)
+  const totalCount = data?.pages?.[0]?.count || 0;
 
   // 화면에 포커스될 때마다 데이터 새로고침
   useFocusEffect(
@@ -81,6 +93,12 @@ const MyUnitListScreen: React.FC = () => {
     });
   };
 
+  const handleEndReached = () => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  };
+
   const renderUnit = ({ item, index }: { item: UnitItem; index: number }) => {
     const formattedDate = item.created_at
       ? moment(item.created_at).format('YYYY-MM-DD HH:mm')
@@ -95,17 +113,6 @@ const MyUnitListScreen: React.FC = () => {
         <Card style={styles.unitCard}>
           <Card.Content>
             <View style={styles.cardHeader}>
-              {/*<View style={styles.unitTypeContainer}>*/}
-              {/*  <MaterialCommunityIcons*/}
-              {/*    name="devices"*/}
-              {/*    size={scale(18)}*/}
-              {/*    color={COLORS.primary}*/}
-              {/*    style={styles.unitTypeIcon}*/}
-              {/*  />*/}
-              {/*  <Text variant="bodySmall" style={styles.unitTypeText}>*/}
-              {/*    내 보유 유니트*/}
-              {/*  </Text>*/}
-              {/*</View>*/}
               <View style={styles.dateContainer}>
                 <MaterialCommunityIcons
                   name="clock-outline"
@@ -177,6 +184,16 @@ const MyUnitListScreen: React.FC = () => {
     );
   };
 
+  const renderFooter = () => {
+    if (!isFetchingNextPage) return null;
+    return (
+      <View style={styles.footerLoader}>
+        <ActivityIndicator size="small" color={COLORS.primary} />
+        <Text style={styles.footerText}>더 불러오는 중...</Text>
+      </View>
+    );
+  };
+
   const renderEmptyList = () => (
     <View style={styles.emptyContainer}>
       <MaterialCommunityIcons
@@ -245,24 +262,27 @@ const MyUnitListScreen: React.FC = () => {
           현재 보유하고 있는 유니트 목록입니다
         </Text>
 
-        {myUnitList?.results && myUnitList.results.length > 0 && (
+        {totalCount > 0 && (
           <View style={styles.countBadge}>
             <Text variant="labelMedium" style={styles.countText}>
-              총 {myUnitList.results.length}개 유니트
+              총 {totalCount}개 유니트
             </Text>
           </View>
         )}
       </View>
 
       <FlatList
-        data={myUnitList?.results || []}
+        data={allUnits}
         renderItem={renderUnit}
         keyExtractor={(item, index) => item.id?.toString() || index.toString()}
         ListEmptyComponent={renderEmptyList}
+        ListFooterComponent={renderFooter}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
         onRefresh={() => refetch()}
         refreshing={isLoading}
+        onEndReached={handleEndReached}
+        onEndReachedThreshold={0.3}
         style={styles.flatList}
       />
     </Surface>
@@ -454,6 +474,17 @@ const styles = StyleSheet.create({
     color: COLORS.textTertiary,
     textAlign: 'center',
     lineHeight: 22,
+  },
+  footerLoader: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: verticalScale(16),
+  },
+  footerText: {
+    marginLeft: scale(8),
+    color: COLORS.textSecondary,
+    fontSize: scale(12),
   },
 });
 

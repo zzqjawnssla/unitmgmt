@@ -111,7 +111,11 @@ export async function getUnitStateList() {
 export async function getUnitLocationHistory(
   location: number,
   location_id: number,
+  pageUrl?: string,
 ) {
+  if (pageUrl) {
+    return await api.get(pageUrl).then(response => response.data);
+  }
   const params = { location, location_content_instance_id: location_id };
   return await api
     .get('/apps/unit_object_info_by_location/', { params })
@@ -146,5 +150,80 @@ export async function changeWarehouse(warehouse: string) {
   const data = { my_warehouse: warehouse };
   return await api
     .put('/accounts/aboutme/update_my_warehouse/', data)
+    .then(response => response.data);
+}
+
+// 대여 요청 API (페이지네이션 지원)
+export async function getRentalRequests(
+  params?: {
+    role?: 'requester' | 'reviewer';
+    status?: string;
+  },
+  pageUrl?: string,
+) {
+  if (pageUrl) {
+    return await api.get(pageUrl).then(response => response.data);
+  }
+  return await api
+    .get('/apps/rental-requests/', { params })
+    .then(response => response.data);
+}
+
+// 대여 요청 목록 (전체 - 페이지네이션 없이, HomeScreen용)
+export async function getRentalRequestsAll(params?: {
+  role?: 'requester' | 'reviewer';
+  status?: string;
+}) {
+  return await api
+    .get('/apps/rental-requests/', { params })
+    .then(response => {
+      const data = response.data;
+      return Array.isArray(data) ? data : data?.results || [];
+    });
+}
+
+export async function getRentalRequestDetail(id: number) {
+  return await api
+    .get(`/apps/rental-requests/${id}/`)
+    .then(response => response.data);
+}
+
+export async function createRentalRequest(data: {
+  unit_id: number;
+  requester_warehouse_id: number;
+  request_memo?: string;
+}) {
+  return await api
+    .post('/apps/rental-requests/', data)
+    .then(response => response.data);
+}
+
+export async function approveRentalRequest(
+  id: number,
+  data: { shipping_method: string; approval_memo?: string },
+) {
+  return await api
+    .patch(`/apps/rental-requests/${id}/approve/`, data)
+    .then(response => response.data);
+}
+
+export async function rejectRentalRequest(
+  id: number,
+  data: { rejection_reason: string },
+) {
+  return await api
+    .patch(`/apps/rental-requests/${id}/reject/`, data)
+    .then(response => response.data);
+}
+
+export async function cancelRentalRequest(id: number) {
+  return await api
+    .patch(`/apps/rental-requests/${id}/cancel/`)
+    .then(response => response.data);
+}
+
+export async function getRentalWarehouses() {
+  return await api
+    .get('/apps/rental-requests/warehouses/')
     .then(response => response.data);
 }
