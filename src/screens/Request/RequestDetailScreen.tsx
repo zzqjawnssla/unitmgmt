@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { StyleSheet, View, ScrollView, Alert } from 'react-native';
 import { useNavigation, RouteProp, useFocusEffect } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
   Text,
   Button,
@@ -50,7 +51,7 @@ const formatDate = (dateStr: string) => {
 export const RequestDetailScreen: React.FC<Props> = ({ route }) => {
   const { user } = useAuth();
   const { requestId } = route.params;
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<UserinfoStackParamList>>();
 
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -122,7 +123,7 @@ export const RequestDetailScreen: React.FC<Props> = ({ route }) => {
   };
 
   const handleNavigateReview = () => {
-    (navigation as any).navigate('RequestReviewScreen', { requestId });
+    navigation.navigate('RequestReviewScreen', { requestId });
   };
 
   const isRequester = user?.user_id === data?.requester;

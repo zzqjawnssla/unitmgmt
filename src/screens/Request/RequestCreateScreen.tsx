@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { StyleSheet, TouchableOpacity, View, ScrollView } from 'react-native';
 import { useNavigation, RouteProp } from '@react-navigation/native';
 import {
@@ -52,6 +52,13 @@ export const RequestCreateScreen: React.FC<Props> = ({ route }) => {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
   const [snackbar, setSnackbar] = useState({ visible: false, message: '' });
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
 
   // Load warehouses on mount
   useEffect(() => {
@@ -121,7 +128,7 @@ export const RequestCreateScreen: React.FC<Props> = ({ route }) => {
         request_memo: memo,
       });
       setSnackbar({ visible: true, message: '대여 요청이 완료되었습니다.' });
-      setTimeout(() => navigation.goBack(), 1500);
+      timeoutRef.current = setTimeout(() => navigation.goBack(), 1500);
     } catch (error: any) {
       const msg = error?.response?.data?.detail || '대여 요청에 실패했습니다.';
       setSnackbar({ visible: true, message: msg });

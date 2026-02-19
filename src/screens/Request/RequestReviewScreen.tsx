@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { StyleSheet, TouchableOpacity, View, ScrollView } from 'react-native';
 import { useNavigation, RouteProp, useFocusEffect } from '@react-navigation/native';
 import {
@@ -64,6 +64,13 @@ export const RequestReviewScreen: React.FC<Props> = ({ route }) => {
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [snackbar, setSnackbar] = useState({ visible: false, message: '' });
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
 
   // Load request detail on mount
   useFocusEffect(
@@ -119,7 +126,7 @@ export const RequestReviewScreen: React.FC<Props> = ({ route }) => {
         approval_memo: approvalMemo,
       });
       setSnackbar({ visible: true, message: '대여 요청이 승인되었습니다.' });
-      setTimeout(() => navigation.goBack(), 1500);
+      timeoutRef.current = setTimeout(() => navigation.goBack(), 1500);
     } catch (error: any) {
       const msg = error?.response?.data?.detail || '승인 처리에 실패했습니다.';
       setSnackbar({ visible: true, message: msg });
@@ -139,7 +146,7 @@ export const RequestReviewScreen: React.FC<Props> = ({ route }) => {
         rejection_reason: rejectionReason,
       });
       setSnackbar({ visible: true, message: '대여 요청이 반려되었습니다.' });
-      setTimeout(() => navigation.goBack(), 1500);
+      timeoutRef.current = setTimeout(() => navigation.goBack(), 1500);
     } catch (error: any) {
       const msg = error?.response?.data?.detail || '반려 처리에 실패했습니다.';
       setSnackbar({ visible: true, message: msg });

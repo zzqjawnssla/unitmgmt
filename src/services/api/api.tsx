@@ -169,18 +169,6 @@ export async function getRentalRequests(
     .then(response => response.data);
 }
 
-// 대여 요청 목록 (전체 - 페이지네이션 없이, HomeScreen용)
-export async function getRentalRequestsAll(params?: {
-  role?: 'requester' | 'reviewer';
-  status?: string;
-}) {
-  return await api
-    .get('/apps/rental-requests/', { params })
-    .then(response => {
-      const data = response.data;
-      return Array.isArray(data) ? data : data?.results || [];
-    });
-}
 
 export async function getRentalRequestDetail(id: number) {
   return await api

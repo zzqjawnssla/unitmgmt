@@ -19,7 +19,7 @@ import { useMyUnits, useLatestPosts } from '../../hooks/useSelectList.ts';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/RootStackNavigation.tsx';
-import { getRentalRequestsAll } from '../../services/api/api';
+import { getRentalRequests } from '../../services/api/api';
 
 const MAIN_LOGO = require('../../assets/images/main_logo.png');
 const HEADER_LOGO = require('../../assets/images/header_logo.png');
@@ -165,8 +165,8 @@ const HomeScreen: React.FC = () => {
     React.useCallback(() => {
       const loadPendingCount = async () => {
         try {
-          const data = await getRentalRequestsAll({ role: 'reviewer', status: 'pending' });
-          setPendingCount(Array.isArray(data) ? data.length : 0);
+          const data = await getRentalRequests({ role: 'reviewer', status: 'pending' });
+          setPendingCount(data?.count || 0);
         } catch (error) {
           console.error('Failed to load pending count:', error);
         }
