@@ -11,7 +11,6 @@ import {
   Text,
   Appbar,
   Button,
-  Snackbar,
   ActivityIndicator,
 } from 'react-native-paper';
 import { scale, verticalScale } from 'react-native-size-matters';
@@ -20,6 +19,7 @@ import { useAuth } from '../../../store/AuthContext.tsx';
 import { SelectUnitModal } from '../../../components/common/SelectUnitModal.tsx';
 import { getUnitCount } from '../../../services/api/api.tsx';
 import { useRegions, useLocations } from '../../../hooks/useSelectList.ts';
+import { SafeSnackbar } from '../../../components/common/SafeSnackbar';
 import type { ServiceStackParamList } from '../../../navigation/RootStackNavigation.tsx';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
 
@@ -565,7 +565,7 @@ const SearchUnitCountScreen: React.FC = () => {
         setDetailType={setDetailType}
       />
 
-      <Snackbar
+      <SafeSnackbar
         visible={snackbarVisible}
         onDismiss={() => setSnackbarVisible(false)}
         duration={3000}
@@ -577,8 +577,8 @@ const SearchUnitCountScreen: React.FC = () => {
           onPress: () => setSnackbarVisible(false),
         }}
       >
-        <Text style={styles.snackbarText}>{snackbarMessage}</Text>
-      </Snackbar>
+        {snackbarMessage}
+      </SafeSnackbar>
     </Surface>
   );
 };
@@ -852,9 +852,6 @@ const styles = StyleSheet.create({
   snackbar: {
     backgroundColor: COLORS.text,
     marginBottom: verticalScale(20),
-  },
-  snackbarText: {
-    color: COLORS.background,
   },
 });
 

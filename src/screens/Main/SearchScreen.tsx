@@ -13,7 +13,6 @@ import {
   SegmentedButtons,
   TextInput,
   Surface,
-  Snackbar,
   Appbar,
 } from 'react-native-paper';
 import { scale, verticalScale } from 'react-native-size-matters';
@@ -26,6 +25,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { RootStackParamList } from '../../navigation/RootStackNavigation.tsx';
 import { useAuth } from '../../store/AuthContext.tsx';
 import { searchCodeList } from '../../store/AuthContext.tsx';
+import { SafeSnackbar } from '../../components/common/SafeSnackbar';
 
 // KakaoTalk-style colors
 const COLORS = {
@@ -237,7 +237,7 @@ export default function SearchScreen(): React.JSX.Element {
             </View>
           </View>
 
-          <Snackbar
+          <SafeSnackbar
             visible={snackbarVisible}
             onDismiss={() => setSnackbarVisible(false)}
             duration={3000}
@@ -249,8 +249,8 @@ export default function SearchScreen(): React.JSX.Element {
               onPress: () => setSnackbarVisible(false),
             }}
           >
-            <Text style={styles.snackbarText}>{snackbarMessage}</Text>
-          </Snackbar>
+            {snackbarMessage}
+          </SafeSnackbar>
         </Surface>
       </TouchableWithoutFeedback>
     </KeyboardAvoidingView>
@@ -355,8 +355,5 @@ const styles = StyleSheet.create({
   snackbar: {
     backgroundColor: COLORS.text,
     marginBottom: verticalScale(20),
-  },
-  snackbarText: {
-    color: COLORS.background,
   },
 });

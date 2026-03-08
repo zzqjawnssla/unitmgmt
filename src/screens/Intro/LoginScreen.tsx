@@ -7,13 +7,14 @@ import {
 } from 'react-native';
 import * as Yup from 'yup';
 import React, { useEffect, useState } from 'react';
-import { TextInput, Text, Snackbar, Button, Surface } from 'react-native-paper';
+import { TextInput, Text, Button, Surface } from 'react-native-paper';
 import { moderateScale, scale, verticalScale } from 'react-native-size-matters';
 import { Formik } from 'formik';
 import { useAuth } from '../../store/AuthContext.tsx';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import axios from 'axios';
 import { BASE_URL } from '@env';
+import { SafeSnackbar } from '../../components/common/SafeSnackbar.tsx';
 
 // Brand Colors
 const BRAND_COLORS = {
@@ -164,10 +165,6 @@ export const LoginScreen: React.FC = () => {
                 touched,
               }) => (
                 <View style={styles.formContainer}>
-                  {/*<Text variant="headlineSmall" style={styles.formTitle}>*/}
-                  {/*  로그인*/}
-                  {/*</Text>*/}
-
                   <View style={styles.inputGroup}>
                     <TextInput
                       mode="flat"
@@ -252,14 +249,6 @@ export const LoginScreen: React.FC = () => {
             /* Two-Factor Authentication */
             <View style={styles.formContainer}>
               <View style={styles.twoFactorHeader}>
-                {/*<MaterialCommunityIcons*/}
-                {/*  name="shield-check"*/}
-                {/*  size={32}*/}
-                {/*  color={BRAND_COLORS.primary}*/}
-                {/*/>*/}
-                {/*<Text variant="headlineSmall" style={styles.formTitle}>*/}
-                {/*  2단계 인증*/}
-                {/*</Text>*/}
                 <Text variant="bodyMedium" style={styles.twoFactorSubtitle}>
                   SMS로 전송된 인증번호를 입력해주세요
                 </Text>
@@ -320,15 +309,15 @@ export const LoginScreen: React.FC = () => {
           )}
         </View>
 
-        <Snackbar
+        <SafeSnackbar
           visible={snackbarVisible}
           onDismiss={() => setSnackbarVisible(false)}
           duration={4000}
           style={styles.snackbar}
           theme={{ colors: { primary: BRAND_COLORS.primary } }}
         >
-          <Text style={styles.snackbarText}>{snackbarMessage}</Text>
-        </Snackbar>
+          {snackbarMessage}
+        </SafeSnackbar>
       </Surface>
     </TouchableWithoutFeedback>
   );
@@ -447,8 +436,5 @@ const styles = StyleSheet.create({
   snackbar: {
     marginBottom: verticalScale(24),
     backgroundColor: BRAND_COLORS.text,
-  },
-  snackbarText: {
-    color: BRAND_COLORS.background,
   },
 });

@@ -6,7 +6,6 @@ import {
   Appbar,
   Card,
   Button,
-  Snackbar,
   ActivityIndicator,
 } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -20,6 +19,7 @@ import { scale, verticalScale } from 'react-native-size-matters';
 import { useQuery } from '@tanstack/react-query';
 import { getWarehouseList, changeWarehouse } from '../../services/api/api.tsx';
 import type { RootStackParamList } from '../../navigation/RootStackNavigation.tsx';
+import { SafeSnackbar } from '../../components/common/SafeSnackbar.tsx';
 
 type ChangeUserInfoScreenNavigationProp = NavigationProp<RootStackParamList>;
 
@@ -269,7 +269,7 @@ const ChangeUserInfoScreen: React.FC = () => {
         </Button>
       </View>
 
-      <Snackbar
+      <SafeSnackbar
         visible={snackbarVisible}
         onDismiss={() => setSnackbarVisible(false)}
         duration={3000}
@@ -280,8 +280,8 @@ const ChangeUserInfoScreen: React.FC = () => {
           textColor: COLORS.primary,
         }}
       >
-        <Text style={styles.snackbarText}>{snackbarMessage}</Text>
-      </Snackbar>
+        {snackbarMessage}
+      </SafeSnackbar>
     </Surface>
   );
 };
@@ -449,10 +449,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.text,
     marginBottom: verticalScale(20),
     borderRadius: scale(8),
-  },
-  snackbarText: {
-    color: COLORS.background,
-    fontWeight: '500',
   },
 });
 

@@ -1,5 +1,6 @@
 import {Platform} from 'react-native';
 import DeviceInfo from 'react-native-device-info';
+import { API_GATEWAY_URL } from '@env';
 
 export interface VersionInfo {
   versionCode: number;
@@ -38,7 +39,7 @@ export const checkForUpdate = async (
     const currentVersionCode = parseInt(DeviceInfo.getBuildNumber(), 10);
     const currentVersionName = DeviceInfo.getVersion();
     const platform = Platform.OS;
-    const apiUrl = process.env.API_GATEWAY_URL;
+    const apiUrl = API_GATEWAY_URL;
 
     console.log('Current version check:');
     console.log('- versionCode:', currentVersionCode);
@@ -94,10 +95,10 @@ export const checkForUpdate = async (
     // 업데이트가 필요한 경우에만 정보 반환
     if (data.needsUpdate || data.needs_update) {
       const latestVersion = data.latestVersion || data.latest_version;
-      
+
       if (latestVersion) {
         console.log('Update required:', latestVersion);
-        
+
         // VersionInfo 형식으로 변환
         const versionInfo: VersionInfo = {
           versionCode: latestVersion.version_code,

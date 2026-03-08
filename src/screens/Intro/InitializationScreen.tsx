@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Platform } from 'react-native';
-import { Text, ActivityIndicator, Surface, Snackbar } from 'react-native-paper';
+import { Text, ActivityIndicator, Surface } from 'react-native-paper';
 import {
   checkDeviceSecurity,
   SecurityCheckResult,
@@ -9,6 +9,8 @@ import {
   checkForUpdate,
   VersionInfo,
 } from '../../services/update/versionService';
+import { SafeSnackbar } from '../../components/common/SafeSnackbar.tsx';
+import { ENV_MODE } from '@env';
 
 interface Props {
   navigation: any;
@@ -23,7 +25,7 @@ const InitializationScreen: React.FC<Props> = ({ navigation }) => {
   const [snackbarMessage, setSnackbarMessage] = useState('');
 
   // Environment mode check
-  const envMode = process.env.ENV_MODE;
+  const envMode = ENV_MODE;
 
   useEffect(() => {
     startInitialization();
@@ -145,14 +147,14 @@ const InitializationScreen: React.FC<Props> = ({ navigation }) => {
         )}
       </View>
 
-      <Snackbar
+      <SafeSnackbar
         visible={showSnackbar}
         onDismiss={() => setShowSnackbar(false)}
-        duration={2000}
+        duration={3000}
         style={styles.snackbar}
       >
-        <Text style={styles.snackbarText}>{snackbarMessage}</Text>
-      </Snackbar>
+        {snackbarMessage}
+      </SafeSnackbar>
     </Surface>
   );
 };
@@ -185,9 +187,6 @@ const styles = StyleSheet.create({
   },
   snackbar: {
     backgroundColor: '#333',
-  },
-  snackbarText: {
-    color: '#FFF',
   },
 });
 

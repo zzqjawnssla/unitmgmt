@@ -7,7 +7,6 @@ import {
   Button,
   Surface,
   Appbar,
-  Snackbar,
   ActivityIndicator,
 } from 'react-native-paper';
 import { scale, verticalScale } from 'react-native-size-matters';
@@ -16,6 +15,7 @@ import { getRentalRequestDetail, cancelRentalRequest } from '../../services/api/
 import { COLORS, STATUS_COLORS } from '../../constants/colors';
 import { getLocationDisplay } from '../../utils/locationDisplay';
 import { formatDateTime } from '../../utils/formatDate';
+import { SafeSnackbar } from '../../components/common/SafeSnackbar';
 import type { UserinfoStackParamList } from '../../navigation/RootStackNavigation';
 
 type RequestDetailScreenRouteProp = RouteProp<UserinfoStackParamList, 'RequestDetailScreen'>;
@@ -272,7 +272,7 @@ export const RequestDetailScreen: React.FC<Props> = ({ route }) => {
         </View>
       )}
 
-      <Snackbar
+      <SafeSnackbar
         visible={snackbar.visible}
         onDismiss={() => setSnackbar({ ...snackbar, visible: false })}
         duration={3000}
@@ -284,8 +284,8 @@ export const RequestDetailScreen: React.FC<Props> = ({ route }) => {
           onPress: () => setSnackbar({ ...snackbar, visible: false }),
         }}
       >
-        <Text style={styles.snackbarText}>{snackbar.message}</Text>
-      </Snackbar>
+        {snackbar.message}
+      </SafeSnackbar>
     </Surface>
   );
 };
@@ -400,8 +400,5 @@ const styles = StyleSheet.create({
   snackbar: {
     backgroundColor: COLORS.text,
     marginBottom: verticalScale(20),
-  },
-  snackbarText: {
-    color: COLORS.background,
   },
 });

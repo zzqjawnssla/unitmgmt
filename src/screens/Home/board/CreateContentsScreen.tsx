@@ -15,7 +15,6 @@ import {
   TextInput,
   Text,
   Button,
-  Snackbar,
   Surface,
   Appbar,
 } from 'react-native-paper';
@@ -25,6 +24,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../../../store/AuthContext.tsx';
 import { HomeStackParamList } from '../../../navigation/RootStackNavigation.tsx';
+import { SafeSnackbar } from '../../../components/common/SafeSnackbar.tsx';
 
 // KakaoTalk-style colors
 const COLORS = {
@@ -274,7 +274,7 @@ export const CreateContentScreen: React.FC = () => {
         </View>
       </Modal>
 
-      <Snackbar
+      <SafeSnackbar
         visible={snackbarVisible}
         onDismiss={() => setSnackbarVisible(false)}
         duration={3000}
@@ -286,8 +286,8 @@ export const CreateContentScreen: React.FC = () => {
           onPress: () => setSnackbarVisible(false),
         }}
       >
-        <Text style={styles.snackbarText}>{snackbarMessage}</Text>
-      </Snackbar>
+        {snackbarMessage}
+      </SafeSnackbar>
     </>
   );
 };
@@ -459,8 +459,5 @@ const styles = StyleSheet.create({
   snackbar: {
     backgroundColor: COLORS.text,
     marginBottom: verticalScale(20),
-  },
-  snackbarText: {
-    color: COLORS.background,
   },
 });

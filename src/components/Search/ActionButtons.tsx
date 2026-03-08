@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { TouchableOpacity, View, StyleSheet } from 'react-native';
-import { Text, Button, Snackbar } from 'react-native-paper';
+import { Text, Button } from 'react-native-paper';
 import { scale, verticalScale } from 'react-native-size-matters';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
 import type {
@@ -8,6 +8,7 @@ import type {
   SearchStackParamList,
 } from '../../navigation/RootStackNavigation';
 import { useAuth } from '../../store/AuthContext';
+import { SafeSnackbar } from '../common/SafeSnackbar';
 
 // Brand Colors
 const BRAND_COLORS = {
@@ -136,15 +137,15 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({ result }) => {
         </Button>
       )}
 
-      <Snackbar
+      <SafeSnackbar
         visible={snackbarVisible}
         onDismiss={() => setSnackbarVisible(false)}
         duration={2000}
         style={styles.snackbar}
         theme={{ colors: { primary: BRAND_COLORS.primary } }}
       >
-        <Text style={styles.snackbarText}>현재 비활성화된 기능입니다.</Text>
-      </Snackbar>
+        현재 비활성화된 기능입니다.
+      </SafeSnackbar>
     </View>
   );
 };
@@ -186,8 +187,5 @@ const styles = StyleSheet.create({
     backgroundColor: BRAND_COLORS.text,
     marginBottom: verticalScale(20),
     width: '100%',
-  },
-  snackbarText: {
-    color: BRAND_COLORS.background,
   },
 });

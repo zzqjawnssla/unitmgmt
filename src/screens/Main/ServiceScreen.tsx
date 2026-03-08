@@ -6,13 +6,14 @@ import {
   View,
   StyleSheet,
 } from 'react-native';
-import { Surface, Text, Appbar, Snackbar } from 'react-native-paper';
+import { Surface, Text, Appbar } from 'react-native-paper';
 import { scale, verticalScale } from 'react-native-size-matters';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
 import { useState } from 'react';
 import type { RootStackParamList } from '../../navigation/RootStackNavigation.tsx';
+import { SafeSnackbar } from '../../components/common/SafeSnackbar.tsx';
 
 type ServiceScreenNavigationProp = NavigationProp<RootStackParamList>;
 
@@ -195,14 +196,14 @@ const ServiceScreen: React.FC = () => {
         </View>
       </ScrollView>
 
-      <Snackbar
+      <SafeSnackbar
         visible={snackbarVisible}
         onDismiss={() => setSnackbarVisible(false)}
         duration={3000}
         style={styles.snackbar}
       >
-        <Text style={styles.snackbarText}>준비 중인 서비스입니다.</Text>
-      </Snackbar>
+        준비 중인 서비스입니다.
+      </SafeSnackbar>
     </Surface>
   );
 };
@@ -286,9 +287,6 @@ const styles = StyleSheet.create({
   snackbar: {
     backgroundColor: COLORS.text,
     marginBottom: verticalScale(20),
-  },
-  snackbarText: {
-    color: COLORS.background,
   },
 });
 

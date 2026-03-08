@@ -12,7 +12,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BASE_URL } from '@env';
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
-import { Snackbar } from 'react-native-paper';
+import { SafeSnackbar } from '../components/common/SafeSnackbar.tsx';
 
 // Snackbar duration constants
 const SNACKBAR_DURATION = {
@@ -332,14 +332,14 @@ export const AuthContextProvider: React.FC<Auth> = ({ children }) => {
         {children}
       </AuthContext.Provider>
 
-      <Snackbar
+      <SafeSnackbar
         visible={snackbarVisible}
         onDismiss={() => setSnackbarVisible(false)}
         duration={snackbarDuration}
         style={{ marginBottom: 50 }}
       >
         {snackbarMessage}
-      </Snackbar>
+      </SafeSnackbar>
     </>
   );
 };

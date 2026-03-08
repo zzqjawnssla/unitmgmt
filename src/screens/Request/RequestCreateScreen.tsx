@@ -7,13 +7,13 @@ import {
   Button,
   Surface,
   Appbar,
-  Snackbar,
 } from 'react-native-paper';
 import { scale, verticalScale } from 'react-native-size-matters';
 import { useAuth } from '../../store/AuthContext';
 import { createRentalRequest, getRentalWarehouses } from '../../services/api/api';
 import { COLORS } from '../../constants/colors';
 import { getLocationDisplay } from '../../utils/locationDisplay';
+import { SafeSnackbar } from '../../components/common/SafeSnackbar';
 import type { SearchStackParamList } from '../../navigation/RootStackNavigation';
 
 type RequestCreateScreenRouteProp = RouteProp<SearchStackParamList, 'RequestCreateScreen'>;
@@ -262,7 +262,7 @@ export const RequestCreateScreen: React.FC<Props> = ({ route }) => {
         </View>
       </ScrollView>
 
-      <Snackbar
+      <SafeSnackbar
         visible={snackbar.visible}
         onDismiss={() => setSnackbar({ ...snackbar, visible: false })}
         duration={3000}
@@ -274,8 +274,8 @@ export const RequestCreateScreen: React.FC<Props> = ({ route }) => {
           onPress: () => setSnackbar({ ...snackbar, visible: false }),
         }}
       >
-        <Text style={styles.snackbarText}>{snackbar.message}</Text>
-      </Snackbar>
+        {snackbar.message}
+      </SafeSnackbar>
     </Surface>
   );
 };
@@ -452,8 +452,5 @@ const styles = StyleSheet.create({
   snackbar: {
     backgroundColor: COLORS.text,
     marginBottom: verticalScale(20),
-  },
-  snackbarText: {
-    color: COLORS.background,
   },
 });
