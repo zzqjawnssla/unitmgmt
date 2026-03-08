@@ -69,7 +69,32 @@ echo ""
 CURRENT_VERSION=$(grep '"version"' package.json | head -1 | cut -d'"' -f4)
 VERSION_CODE=$(echo $CURRENT_VERSION | awk -F. '{print $1*10000 + $2*100 + $3}')
 
-echo -e "${YELLOW}📌 Current version: ${CURRENT_VERSION} (code: ${VERSION_CODE})${NC}"
+# build.gradle 버전 정보 읽기
+GRADLE_VERSION_NAME=$(grep 'versionName ' android/app/build.gradle | head -1 | sed 's/.*versionName "\(.*\)"/\1/')
+GRADLE_VERSION_CODE=$(grep 'versionCode ' android/app/build.gradle | head -1 | sed 's/.*versionCode \([0-9]*\)/\1/')
+
+echo -e "${YELLOW}📌 package.json version: ${CURRENT_VERSION} (code: ${VERSION_CODE})${NC}"
+echo -e "${YELLOW}📌 build.gradle version: ${GRADLE_VERSION_NAME} (code: ${GRADLE_VERSION_CODE})${NC}"
+echo ""
+
+# package.json과 build.gradle 버전 일치 검증
+if [ "$CURRENT_VERSION" != "$GRADLE_VERSION_NAME" ]; then
+    echo -e "${RED}❌ Error: 버전 불일치 감지!${NC}"
+    echo -e "${RED}   package.json: ${CURRENT_VERSION}${NC}"
+    echo -e "${RED}   build.gradle: ${GRADLE_VERSION_NAME}${NC}"
+    echo -e "${YELLOW}   build.gradle의 versionName을 package.json과 일치시켜 주세요.${NC}"
+    exit 1
+fi
+
+if [ "$VERSION_CODE" != "$GRADLE_VERSION_CODE" ]; then
+    echo -e "${RED}❌ Error: versionCode 불일치 감지!${NC}"
+    echo -e "${RED}   package.json 기반: ${VERSION_CODE}${NC}"
+    echo -e "${RED}   build.gradle: ${GRADLE_VERSION_CODE}${NC}"
+    echo -e "${YELLOW}   build.gradle의 versionCode를 확인해 주세요.${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}✅ 버전 일치 확인 완료${NC}"
 echo ""
 
 # 1. Clean previous builds

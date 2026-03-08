@@ -8,9 +8,10 @@ import {
 } from 'react-native';
 import React, { useState } from 'react';
 import { scale, verticalScale } from 'react-native-size-matters';
-import { Button, Surface, Snackbar, Text } from 'react-native-paper';
+import { Button, Surface, Text } from 'react-native-paper';
 import { SelectUnitType } from './SelectUnitType.tsx';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import { SafeSnackbar } from './SafeSnackbar.tsx';
 
 // KakaoTalk-style colors
 const COLORS = {
@@ -152,7 +153,7 @@ export const SelectUnitModal: React.FC<SearchOptionModalProps> = ({
         </TouchableWithoutFeedback>
       </Modal>
 
-      <Snackbar
+      <SafeSnackbar
         visible={snackbarVisible}
         onDismiss={() => setSnackbarVisible(false)}
         duration={3000}
@@ -164,8 +165,8 @@ export const SelectUnitModal: React.FC<SearchOptionModalProps> = ({
           onPress: () => setSnackbarVisible(false),
         }}
       >
-        <Text style={styles.snackbarText}>유니트명을 선택해주세요.</Text>
-      </Snackbar>
+        유니트명을 선택해주세요.
+      </SafeSnackbar>
     </>
   );
 };
@@ -230,8 +231,5 @@ const styles = StyleSheet.create({
   snackbar: {
     backgroundColor: COLORS.text,
     marginBottom: verticalScale(20),
-  },
-  snackbarText: {
-    color: COLORS.background,
   },
 });

@@ -8,7 +8,6 @@ import {
   Button,
   Surface,
   Appbar,
-  Snackbar,
 } from 'react-native-paper';
 import { scale, verticalScale } from 'react-native-size-matters';
 import Icon from 'react-native-vector-icons/MaterialIcons';
@@ -17,6 +16,7 @@ import { api } from '../../services/api/api';
 import { SearchLocationModal } from '../../components/Search/SearchLocationModal';
 import { useWarehouses } from '../../hooks/useSelectList';
 import type { HomeStackParamList } from '../../navigation/RootStackNavigation';
+import { SafeSnackbar } from '../../components/common/SafeSnackbar.tsx';
 
 // KakaoTalk-style colors
 const COLORS = {
@@ -867,7 +867,7 @@ export const UseUnitScreen: React.FC<UseUnitProps> = ({ route }) => {
         setSearchLocation={setSearchLocation}
       />
 
-      <Snackbar
+      <SafeSnackbar
         visible={snackbarVisible}
         onDismiss={() => setSnackbarVisible(false)}
         duration={3000}
@@ -879,8 +879,8 @@ export const UseUnitScreen: React.FC<UseUnitProps> = ({ route }) => {
           onPress: () => setSnackbarVisible(false),
         }}
       >
-        <Text style={styles.snackbarText}>{snackbarMessage}</Text>
-      </Snackbar>
+        {snackbarMessage}
+      </SafeSnackbar>
     </Surface>
   );
 };
@@ -1063,9 +1063,6 @@ const styles = StyleSheet.create({
   snackbar: {
     backgroundColor: COLORS.text,
     marginBottom: verticalScale(20),
-  },
-  snackbarText: {
-    color: COLORS.background,
   },
   requiredText: {
     fontSize: scale(12),

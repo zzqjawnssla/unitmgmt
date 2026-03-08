@@ -13,13 +13,13 @@ import {
   Text,
   TextInput,
   SegmentedButtons,
-  Snackbar,
   ActivityIndicator,
 } from 'react-native-paper';
 import { scale, verticalScale } from 'react-native-size-matters';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { api } from '../../services/api/api';
 import { useTeams } from '../../hooks/useSelectList';
+import { SafeSnackbar } from '../common/SafeSnackbar';
 
 // KakaoTalk-style colors (consistent with UseUnitScreen)
 const COLORS = {
@@ -542,14 +542,14 @@ export const SearchLocationModal: React.FC<SearchLocationModalProps> = ({
           </View>
         </TouchableWithoutFeedback>
         {/* Snackbar inside Modal */}
-        <Snackbar
+        <SafeSnackbar
           visible={snackbarVisible}
           onDismiss={() => setSnackbarVisible(false)}
           duration={3000}
           style={styles.snackbar}
         >
           {snackbarMessage}
-        </Snackbar>
+        </SafeSnackbar>
       </Modal>
     </>
   );

@@ -12,13 +12,14 @@ import {
   useFocusEffect,
   useNavigation,
 } from '@react-navigation/native';
-import { Snackbar, Text, Surface, Appbar } from 'react-native-paper';
+import { Text, Surface, Appbar } from 'react-native-paper';
 import { scale, verticalScale } from 'react-native-size-matters';
 
 import { useAuth } from '../../store/AuthContext.tsx';
 import { api } from '../../services/api/api.tsx';
 import { UnitInfo } from '../../components/Search/UnitInfo.tsx';
 import { UnitHistory } from '../../components/Search/UnitHistory.tsx';
+import { SafeSnackbar } from '../../components/common/SafeSnackbar.tsx';
 
 // KakaoTalk-style colors
 const COLORS = {
@@ -209,7 +210,7 @@ export const SearchResultScreen: React.FC = () => {
         </View>
       </View>
 
-      <Snackbar
+      <SafeSnackbar
         visible={snackbarVisible}
         onDismiss={() => setSnackbarVisible(false)}
         duration={3000}
@@ -221,8 +222,8 @@ export const SearchResultScreen: React.FC = () => {
           onPress: () => setSnackbarVisible(false),
         }}
       >
-        <Text style={styles.snackbarText}>{snackbarMessage}</Text>
-      </Snackbar>
+        {snackbarMessage}
+      </SafeSnackbar>
     </Surface>
   );
 };
@@ -304,8 +305,5 @@ const styles = StyleSheet.create({
   snackbar: {
     backgroundColor: COLORS.text,
     marginBottom: verticalScale(20),
-  },
-  snackbarText: {
-    color: COLORS.background,
   },
 });

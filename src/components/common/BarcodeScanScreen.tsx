@@ -23,7 +23,7 @@ import {
   useCodeScanner,
   useCameraFormat,
 } from 'react-native-vision-camera';
-import { Snackbar } from 'react-native-paper';
+import { SafeSnackbar } from './SafeSnackbar.tsx';
 import type { RootStackParamList } from '../../navigation/RootStackNavigation';
 
 // Brand Colors
@@ -252,7 +252,7 @@ export const BarcodeScanScreen: React.FC = () => {
         </View>
       )}
 
-      <Snackbar
+      <SafeSnackbar
         visible={snackbarVisible}
         onDismiss={() => setSnackbarVisible(false)}
         duration={3000}
@@ -262,7 +262,7 @@ export const BarcodeScanScreen: React.FC = () => {
         }}
       >
         {snackbarMessage}
-      </Snackbar>
+      </SafeSnackbar>
     </Surface>
   );
 };
