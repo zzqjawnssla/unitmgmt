@@ -5,13 +5,14 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Snackbar, Text } from 'react-native-paper';
+import { Text } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { scale, verticalScale } from 'react-native-size-matters';
 import moment from 'moment';
 import React, { useState } from 'react';
 import { api } from '../../services/api/api.tsx';
 import { useInfiniteQuery } from '@tanstack/react-query';
+import { SafeSnackbar } from '../common/SafeSnackbar.tsx';
 
 // KakaoTalk-style colors
 const COLORS = {
@@ -157,7 +158,7 @@ export const UnitHistory = ({ result }: UnitHistoryProps) => {
             바코드 정보가 없어 이력을 조회할 수 없어요
           </Text>
         </View>
-        <Snackbar
+        <SafeSnackbar
           visible={snackbarVisible}
           onDismiss={() => setSnackbarVisible(false)}
           duration={3000}
@@ -169,8 +170,8 @@ export const UnitHistory = ({ result }: UnitHistoryProps) => {
             onPress: () => setSnackbarVisible(false),
           }}
         >
-          <Text style={styles.snackbarText}>{snackbarMessage}</Text>
-        </Snackbar>
+          {snackbarMessage}
+        </SafeSnackbar>
       </View>
     );
   }
@@ -186,7 +187,7 @@ export const UnitHistory = ({ result }: UnitHistoryProps) => {
           <View style={styles.timelineDot} />
           {index < allHistoryItems.length - 1 && <View style={styles.timelineLine} />}
         </View>
-        
+
         <View style={styles.contentContainer}>
           <View style={styles.headerRow}>
             <MaterialCommunityIcons
@@ -208,7 +209,7 @@ export const UnitHistory = ({ result }: UnitHistoryProps) => {
               />
               <Text style={styles.locationTypeText}>{item?.location}</Text>
             </View>
-            
+
             {item?.location === '국소' && (
               <View style={styles.locationDetails}>
                 <View style={styles.detailRow}>
@@ -310,7 +311,7 @@ export const UnitHistory = ({ result }: UnitHistoryProps) => {
                 ({item?.unit_state})
               </Text>
             </View>
-            
+
             {(item.unit_movement_desc !== '' || item.state_desc !== '') && (
               <View style={styles.reasonSection}>
                 <Text style={styles.reasonTitle}>이동사유</Text>
@@ -425,7 +426,7 @@ export const UnitHistory = ({ result }: UnitHistoryProps) => {
         )}
       </View>
 
-      <Snackbar
+      <SafeSnackbar
         visible={snackbarVisible}
         onDismiss={() => setSnackbarVisible(false)}
         duration={3000}
@@ -437,8 +438,8 @@ export const UnitHistory = ({ result }: UnitHistoryProps) => {
           onPress: () => setSnackbarVisible(false),
         }}
       >
-        <Text style={styles.snackbarText}>{snackbarMessage}</Text>
-      </Snackbar>
+        {snackbarMessage}
+      </SafeSnackbar>
     </View>
   );
 };
@@ -731,9 +732,5 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.text,
     marginBottom: verticalScale(20),
     borderRadius: scale(8),
-  },
-  snackbarText: {
-    color: COLORS.background,
-    fontWeight: '500',
   },
 });

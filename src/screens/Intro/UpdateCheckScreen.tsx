@@ -1,26 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Platform, BackHandler, Alert } from 'react-native';
-import { 
-  Text, 
-  Button, 
-  Card, 
-  ProgressBar, 
+import {
+  Text,
+  Button,
+  Card,
+  ProgressBar,
   Surface,
   Dialog,
   Paragraph,
-  Snackbar,
   ActivityIndicator
 } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 import { checkForUpdate, getCurrentVersionInfo, VersionInfo } from '../../services/update/versionService';
-import { 
-  downloadAPK, 
-  installAPK, 
+import {
+  downloadAPK,
+  installAPK,
   updateiOSApp,
   cleanupDownloads,
   checkAvailableStorage,
-  DownloadProgress 
+  DownloadProgress
 } from '../../services/update/downloadService';
 
 interface Props {
@@ -46,7 +45,7 @@ const UpdateCheckScreen: React.FC<Props> = ({ navigation, route }) => {
 
   useEffect(() => {
     initializeScreen();
-    
+
     // Android 하드웨어 백 버튼 차단 (강제 업데이트이므로)
     const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
       if (updateState === 'available' || updateState === 'error') {
@@ -76,7 +75,7 @@ const UpdateCheckScreen: React.FC<Props> = ({ navigation, route }) => {
       if (Platform.OS === 'android' && updateInfo) {
         const storage = await checkAvailableStorage();
         const requiredSpace = (updateInfo.fileSize || 50 * 1024 * 1024) * 1.5; // 여유 공간 50%
-        
+
         if (storage.available > 0 && storage.available < requiredSpace) {
           setShowStorageWarning(true);
         }
@@ -147,7 +146,7 @@ const UpdateCheckScreen: React.FC<Props> = ({ navigation, route }) => {
       // Enterprise In-House 배포: manifestUrl 또는 installUrl 사용
       const updateUrl = updateInfo.manifestUrl || updateInfo.installUrl || undefined;
       await updateiOSApp(updateUrl);
-      
+
       setUpdateState('completed');
     } catch (error: any) {
       console.error('iOS 업데이트 오류:', error);
@@ -162,7 +161,7 @@ const UpdateCheckScreen: React.FC<Props> = ({ navigation, route }) => {
 
   const confirmExitApp = () => {
     setShowExitDialog(false);
-    
+
     if (Platform.OS === 'android') {
       BackHandler.exitApp();
     } else {
@@ -204,7 +203,7 @@ const UpdateCheckScreen: React.FC<Props> = ({ navigation, route }) => {
             <Text variant="bodyMedium" style={[styles.subtitle, styles.forceUpdateText]}>
               앱을 계속 사용하려면 업데이트가 필요합니다.
             </Text>
-            
+
             {updateInfo && (
               <Card style={styles.updateCard}>
                 <Card.Content>
@@ -237,7 +236,7 @@ const UpdateCheckScreen: React.FC<Props> = ({ navigation, route }) => {
               >
                 업데이트 설치
               </Button>
-              
+
               <Button
                 mode="outlined"
                 onPress={handleExitApp}
@@ -259,18 +258,18 @@ const UpdateCheckScreen: React.FC<Props> = ({ navigation, route }) => {
             <Text variant="bodyMedium" style={styles.subtitle}>
               업데이트 파일을 다운로드하고 있습니다...
             </Text>
-            
+
             <Surface style={styles.progressContainer}>
-              <ProgressBar 
-                progress={downloadProgress.progress / 100} 
-                color="#F47725" 
+              <ProgressBar
+                progress={downloadProgress.progress / 100}
+                color="#F47725"
                 style={styles.progressBar}
               />
               <Text variant="bodySmall" style={styles.progressText}>
                 {downloadProgress.progress.toFixed(1)}% ({formatFileSize(downloadProgress.written)} / {formatFileSize(downloadProgress.total)})
               </Text>
             </Surface>
-            
+
             <Text variant="bodySmall" style={styles.warningText}>
               다운로드 중에는 앱을 종료하지 마세요.
             </Text>
@@ -283,8 +282,8 @@ const UpdateCheckScreen: React.FC<Props> = ({ navigation, route }) => {
             <Icon name="cog" size={80} color="#F47725" style={styles.icon} />
             <Text variant="headlineSmall" style={styles.title}>설치 준비 중</Text>
             <Text variant="bodyMedium" style={styles.subtitle}>
-              {Platform.OS === 'android' 
-                ? '설치 화면이 곧 표시됩니다...' 
+              {Platform.OS === 'android'
+                ? '설치 화면이 곧 표시됩니다...'
                 : 'App Store로 이동합니다...'}
             </Text>
             <ProgressBar indeterminate color="#F47725" style={styles.progressBar} />
@@ -297,8 +296,8 @@ const UpdateCheckScreen: React.FC<Props> = ({ navigation, route }) => {
             <Icon name="check-circle" size={80} color="#4CAF50" style={styles.icon} />
             <Text variant="headlineSmall" style={styles.title}>업데이트 준비 완료</Text>
             <Text variant="bodyMedium" style={styles.subtitle}>
-              {Platform.OS === 'android' 
-                ? '설치 화면에서 앱을 설치해주세요.' 
+              {Platform.OS === 'android'
+                ? '설치 화면에서 앱을 설치해주세요.'
                 : 'App Store에서 업데이트를 완료해주세요.'}
             </Text>
           </View>
@@ -328,7 +327,7 @@ const UpdateCheckScreen: React.FC<Props> = ({ navigation, route }) => {
             <Text variant="bodyMedium" style={styles.subtitle}>
               {errorMessage || '알 수 없는 오류가 발생했습니다.'}
             </Text>
-            
+
             <View style={styles.buttonContainer}>
               <Button
                 mode="contained"
@@ -339,7 +338,7 @@ const UpdateCheckScreen: React.FC<Props> = ({ navigation, route }) => {
               >
                 로그인으로 이동
               </Button>
-              
+
               <Button
                 mode="outlined"
                 onPress={handleExitApp}
@@ -361,7 +360,7 @@ const UpdateCheckScreen: React.FC<Props> = ({ navigation, route }) => {
   return (
     <View style={styles.container}>
       {renderContent()}
-      
+
       {/* 저장 공간 부족 경고 다이얼로그 */}
       <Dialog visible={showStorageWarning} onDismiss={() => setShowStorageWarning(false)}>
         <Dialog.Title>저장 공간 부족</Dialog.Title>
@@ -389,7 +388,7 @@ const UpdateCheckScreen: React.FC<Props> = ({ navigation, route }) => {
         </Dialog.Content>
         <Dialog.Actions>
           <Button onPress={() => setShowExitDialog(false)}>취소</Button>
-          <Button 
+          <Button
             onPress={confirmExitApp}
             textColor="#F44336"
           >

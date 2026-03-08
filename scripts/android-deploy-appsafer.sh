@@ -100,7 +100,31 @@ echo ""
 CURRENT_VERSION=$(grep '"version"' package.json | head -1 | cut -d'"' -f4)
 VERSION_CODE=$(echo $CURRENT_VERSION | awk -F. '{print $1*10000 + $2*100 + $3}')
 
-echo -e "${YELLOW}📌 Current version: ${CURRENT_VERSION} (code: ${VERSION_CODE})${NC}"
+# build.gradle 버전 정보 읽기
+GRADLE_VERSION_NAME=$(grep 'versionName ' android/app/build.gradle | head -1 | sed 's/.*versionName "\(.*\)"/\1/')
+GRADLE_VERSION_CODE=$(grep 'versionCode ' android/app/build.gradle | head -1 | sed 's/.*versionCode \([0-9]*\)/\1/')
+
+echo -e "${YELLOW}📌 package.json version: ${CURRENT_VERSION} (code: ${VERSION_CODE})${NC}"
+echo -e "${YELLOW}📌 build.gradle version: ${GRADLE_VERSION_NAME} (code: ${GRADLE_VERSION_CODE})${NC}"
+
+# package.json과 build.gradle 버전 일치 검증
+if [ "$CURRENT_VERSION" != "$GRADLE_VERSION_NAME" ]; then
+    echo -e "${RED}❌ Error: 버전 불일치 감지!${NC}"
+    echo -e "${RED}   package.json: ${CURRENT_VERSION}${NC}"
+    echo -e "${RED}   build.gradle: ${GRADLE_VERSION_NAME}${NC}"
+    echo -e "${YELLOW}   APK가 올바른 버전으로 빌드되었는지 확인해 주세요.${NC}"
+    exit 1
+fi
+
+if [ "$VERSION_CODE" != "$GRADLE_VERSION_CODE" ]; then
+    echo -e "${RED}❌ Error: versionCode 불일치 감지!${NC}"
+    echo -e "${RED}   package.json 기반: ${VERSION_CODE}${NC}"
+    echo -e "${RED}   build.gradle: ${GRADLE_VERSION_CODE}${NC}"
+    echo -e "${YELLOW}   build.gradle의 versionCode를 확인해 주세요.${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}✅ 버전 일치 확인 완료${NC}"
 
 # AppSafer 적용된 APK 파일 확인
 APPSAFER_APK="android/downloaded-apks/com.unitmgmt.apk"
@@ -344,28 +368,15 @@ if [ "$DRY_RUN" = true ]; then
 else
     echo -e "${YELLOW}💾 Saving new version metadata...${NC}"
 
-    cat > /tmp/dynamodb_item.json << EOF
-{
-    "app_id": {"S": "${APP_ID}"},
-    "version_code": {"N": "${VERSION_CODE}"},
-    "platform": {"S": "android"},
-    "version_name": {"S": "${CURRENT_VERSION}"},
-    "filename": {"S": "${DB_FILENAME}"},
-    "file_size": {"N": "${FINAL_SIZE_BYTES}"},
-    "created_at": {"S": "${TIMESTAMP}"},
-    "release_date": {"S": "$(date -u +"%Y-%m-%d")"},
-    "download_url": {"S": "${S3_URL}"},
-    "download_count": {"N": "0"},
-    "is_active": {"BOOL": true},
-    "release_notes": {"S": "${RELEASE_NOTES}"},
-    "appsafer_applied": {"BOOL": true}
-}
-EOF
+    printf '{\n    "app_id": {"S": "%s"},\n    "version_code": {"N": "%s"},\n    "platform": {"S": "android"},\n    "version_name": {"S": "%s"},\n    "filename": {"S": "%s"},\n    "file_size": {"N": "%s"},\n    "created_at": {"S": "%s"},\n    "release_date": {"S": "%s"},\n    "download_url": {"S": "%s"},\n    "download_count": {"N": "0"},\n    "is_active": {"BOOL": true},\n    "release_notes": {"S": "%s"},\n    "appsafer_applied": {"BOOL": true}\n}\n' \
+        "${APP_ID}" "${VERSION_CODE}" "${CURRENT_VERSION}" "${DB_FILENAME}" \
+        "${FINAL_SIZE_BYTES}" "${TIMESTAMP}" "$(date -u +"%Y-%m-%d")" \
+        "${S3_URL}" "${RELEASE_NOTES}" > /tmp/dynamodb_item.json
 
     aws dynamodb put-item \
-        --table-name ${AWS_DYNAMODB_TABLE} \
+        --table-name "${AWS_DYNAMODB_TABLE}" \
         --item file:///tmp/dynamodb_item.json \
-        --region ${AWS_REGION}
+        --region "${AWS_REGION}"
 
     rm -f /tmp/dynamodb_item.json
 

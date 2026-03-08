@@ -13,7 +13,7 @@ import {
   useNavigation,
   NavigationProp,
 } from '@react-navigation/native';
-import { Text, Snackbar, Appbar, Surface } from 'react-native-paper';
+import { Text, Appbar, Surface } from 'react-native-paper';
 import { scale, verticalScale } from 'react-native-size-matters';
 import MaterialIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { api } from '../../../services/api/api.tsx';
@@ -22,6 +22,7 @@ import {
   RootStackParamList,
 } from '../../../navigation/RootStackNavigation.tsx';
 import { useAuth } from '../../../store/AuthContext.tsx';
+import { SafeSnackbar } from '../../../components/common/SafeSnackbar.tsx';
 import FlatList = Animated.FlatList;
 
 // Type for the API response data
@@ -311,7 +312,7 @@ export const DetailUnitCountScreen: React.FC = () => {
           </View>
         )}
       </View>
-      <Snackbar
+      <SafeSnackbar
         visible={snackbarVisible}
         onDismiss={() => setSnackbarVisible(false)}
         duration={3000}
@@ -323,8 +324,8 @@ export const DetailUnitCountScreen: React.FC = () => {
           onPress: () => setSnackbarVisible(false),
         }}
       >
-        <Text style={styles.snackbarText}>{snackbarMessage}</Text>
-      </Snackbar>
+        {snackbarMessage}
+      </SafeSnackbar>
     </Surface>
   );
 };
@@ -452,8 +453,5 @@ const styles = StyleSheet.create({
   snackbar: {
     backgroundColor: COLORS.text,
     marginBottom: verticalScale(20),
-  },
-  snackbarText: {
-    color: COLORS.background,
   },
 });
